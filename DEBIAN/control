@@ -1,0 +1,13 @@
+Source: myapp
+Section: unknown
+Priority: extra
+Maintainer: xiaobin.zhao@cstackdev.io
+Build-Depends: debhelper (>=9), build-essential, python3-dev
+Standards-Version: 3.9.4
+Homepage: http://g.cstackdev.io/xiaobin.zhao/fastapi.git
+Package: myapp
+Version: 1.0.0
+Architecture: amd64
+Depends:
+Recommends:
+Description: python web framework base on FastAPI.

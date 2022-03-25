@@ -1,0 +1,12 @@
+#!/bin/bash
+
+################################
+# Deb包文件解包之后，将会运行该脚本
+################################
+
+# 设置服务开机自启动
+systemctl daemon-reload
+systemctl enable myapp.service
+
+echo "postinst done"
+exit 0

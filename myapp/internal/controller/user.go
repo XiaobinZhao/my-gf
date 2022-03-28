@@ -65,14 +65,6 @@ func (a *cUser) List(ctx context.Context, req *api.UserListReq) (res *api.UserLi
 	if err != nil {
 		return nil, err
 	}
-	res.Size = listUsers.Size
-	res.Total = listUsers.Total
-	res.Page = listUsers.Page
-	res.List = []*api.UserGetRes{} // 默认为空数组而不是nil
-	for _, user := range listUsers.List {
-		userGetRes := &api.UserGetRes{}
-		copier.Copy(userGetRes, user.User)
-		res.List = append(res.List, userGetRes)
-	}
+	copier.Copy(res, listUsers)
 	return
 }

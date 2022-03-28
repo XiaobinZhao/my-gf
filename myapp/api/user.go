@@ -40,13 +40,9 @@ type UserGetRes struct {
 	UpdatedAt   *gtime.Time `json:"updatedAt"   dc:"最后修改时间"`
 }
 
-type UserItem struct {
-	User *UserGetRes `json:"user" description:"用户详情"`
-}
-
 type UserListRes struct {
-	List  []*UserGetRes `json:"users" description:"用户列表"`
-	Page  int           `json:"page" description:"分页码"`
-	Size  int           `json:"size" description:"分页数量"`
-	Total int           `json:"total" description:"数据总数"`
+	List  []UserGetRes `json:"users" description:"用户列表"`
+	Page  int          `json:"page" description:"分页码"`
+	Size  int          `json:"size" description:"分页数量"`
+	Total int          `json:"total" description:"数据总数"`
 }

@@ -190,7 +190,7 @@ Debian9 安装的golang版本默认为`golang-1.7`
 
 # 开始开发
 
-## gf-cli安装
+## 1. gf-cli安装
 
 1. 二进制安装
 
@@ -217,11 +217,11 @@ Debian9 安装的golang版本默认为`golang-1.7`
      Build Time:  2022-01-24 03:01:42
    ```
 
-## 数据库表设计
+## 2. 数据库表设计
 
-在数据库中进行表结构设计，包括字段、长度、主键、描述等。
+在数据库中进行表结构设计，包括字段、长度、主键、描述等。设计完成之后，导出SQL文件保存到resource/doc目录下。
 
-## gf cli自动生成dao/do/entity
+## 3. gf cli自动生成dao/do/entity
 
 1. 配置好配置文件，重点
 
@@ -235,7 +235,7 @@ Debian9 安装的golang版本默认为`golang-1.7`
            noModelComment =   true
    ```
 
-2.  使用gf  cli命令
+2. 使用gf  cli命令
 
    `gf gen dao`，成功时可以得到如下类似的输出：
 
@@ -254,5 +254,52 @@ Debian9 安装的golang版本默认为`golang-1.7`
 
    可以查看具体文件是否生成。
 
-3. 编写main.py 和 路由
+## 4. 开始代码开发
+### 1. main和router
+
+```go
+func main() {
+	s := g.Server()
+	s.Group("/", func(group *ghttp.RouterGroup) {
+		group.Middleware(
+			service.Middleware().I18NMiddleware,
+			//service.Middleware().Ctx,
+			service.Middleware().ResponseHandler,
+		)
+		group.Bind(
+			controller.User, // 用户
+		)
+	})
+	// 自定义文档
+	enhanceOpenAPIDoc(s)
+	// 启动Http Server
+	s.Run()
+}
+```
+
+`g.Server()`方法获得一个默认的`Server`对象，该方法采用`单例模式`设计，也就是说，多次调用该方法，返回的是同一个`Server`对象。通过`Run()`方法执行`Server`的监听运行，在没有任何额外设置的情况下，它默认监听`80`端口。
+
+其他功能，请参看gf文档：[开始使用web服务开发](https://goframe.org/pages/viewpage.action?pageId=1114155)
+
+- 支持静态文件的`WebServer`
+- `Server`支持多端口监听
+- `Server`支持同一进程多实例运行
+- `Server`支持多域名绑定
+- 支持https
+- 支持server启动加载配置文件的配置项
+
+### 2. middleware
+
+
+
+### 3. openAPIDoc(swagger)
+### 4. requestModel和responseModel
+### 5. controller 和 service
+### 6. inputModel和outputModel
+### 7. dao/do/entity自动生成
+### 8. errCode
+### 9. I18N
+### 10. 配置管理
+### 11. log配置
+### 12. 单元测试
 

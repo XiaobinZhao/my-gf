@@ -31,13 +31,6 @@ type UserListInput struct {
 	SortValue string `json:"sortValue"   in:"query" dc:"排序顺序，ASC升序，DESC降序"`
 }
 
-type UserItem struct {
-	User *UserGetOutput `json:"user" description:"用户详情"`
-}
-
 type UserListOutput struct {
-	List  []UserItem `json:"users" description:"用户列表"`
-	Page  int        `json:"page" description:"分页码"`
-	Size  int        `json:"size" description:"分页数量"`
-	Total int        `json:"total" description:"数据总数"`
+	api.UserListRes
 }

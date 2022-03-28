@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"myapp/api"
 	"myapp/internal/errorCode"
 	"myapp/internal/model"
 	"myapp/internal/model/entity"
 	"myapp/internal/service/internal/dao"
 	"strings"
+
+	"github.com/gogf/gf/v2/database/gdb"
 
 	"github.com/gogf/gf/v2/util/guid"
 
@@ -55,31 +58,19 @@ func (s *sUser) EncryptPassword(loginName, password string) string {
 }
 
 func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (userUuid string, err error) {
-	tx, err := g.DB().Begin(ctx)
-	if err != nil {
-		return "", err
-	}
-	// 方法退出时检验返回值，
-	// 如果结果成功则执行tx.Commit()提交,
-	// 否则执行tx.Rollback()回滚操作。
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			_ = tx.Commit()
-		}
-	}()
-
 	var user *entity.User
-	if err := gconv.Struct(input, &user); err != nil {
-		return "", err
-	}
-	if err := s.CheckLoginNameUnique(ctx, user.LoginName); err != nil {
-		return "", err
-	}
-	user.Password = s.EncryptPassword(user.LoginName, user.Password)
-	user.Uuid = guid.S()
-	_, err = dao.User.Ctx(ctx).Data(user).OmitEmpty().Save()
+	err = dao.User.Transaction(ctx, func(ctx context.Context, tx *gdb.TX) error {
+		if err := gconv.Struct(input, &user); err != nil {
+			return err
+		}
+		if err := s.CheckLoginNameUnique(ctx, user.LoginName); err != nil {
+			return err
+		}
+		user.Password = s.EncryptPassword(user.LoginName, user.Password)
+		user.Uuid = guid.S()
+		_, err := dao.User.Ctx(ctx).Data(user).OmitEmpty().Save()
+		return err
+	})
 	return user.Uuid, err
 }
 
@@ -106,10 +97,11 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 		m           = dao.User.Ctx(ctx)
 		likePattern = `%` + input.SearchStr + `%`
 	)
-	out = &model.UserListOutput{
-		Page: input.Page,
-		Size: input.Size,
-	}
+	out = &model.UserListOutput{}
+	out.Page = input.Page
+	out.Size = input.Size
+	out.List = []api.UserGetRes{}
+
 	// 模糊查询
 	if len(input.SearchStr) > 0 {
 		m = m.WhereLike(dao.User.Columns().DisplayName, likePattern).
@@ -125,7 +117,6 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 	if len(input.SortKey) > 0 && sortField != "" {
 		listModel = listModel.Order(sortField, input.SortValue)
 	}
-
 	all, err := listModel.All()
 	if err != nil {
 		return nil, err
@@ -136,7 +127,10 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 	// total
 	out.Total, err = m.Count()
 	// 数据转换，db->model
-	if err := all.ScanList(&out.List, "User"); err != nil {
+	//if err := all.ScanList(&out.List, "User"); err != nil {
+	//	return nil, err
+	//}
+	if err := all.Structs(&out.List); err != nil {
 		return nil, err
 	}
 	return out, nil

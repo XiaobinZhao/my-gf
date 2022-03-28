@@ -67,11 +67,11 @@ func (s *sMiddleware) ResponseHandler(r *ghttp.Request) {
 		if code == errorCode.CodeNil {
 			code = errorCode.CodeInternalError
 		}
-		// TODO: 修改http 状态码出问题
 		if detail, ok := code.Detail().(errorCode.MyCodeDetail); ok {
 			r.Response.WriteStatus(detail.HttpCode)
 			r.Response.ClearBuffer() // gf 会自动往response追加http.StatusText。此处不需要，所以删除掉。
 		}
+		g.Log().Errorf(r.GetCtx(), "%+v", err)
 		response.JsonExit(r, code.Code(), err.Error())
 	} else {
 		response.JsonExit(r, code.Code(), "", res)

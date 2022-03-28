@@ -16,6 +16,8 @@ import (
 // @schemes     http
 func main() {
 	s := g.Server()
+	// 设置行号，日期，时间：日期+时间+毫秒，如：2009-01-23 01:23:23.675
+	//g.Log().SetFlags(g.Log().GetFlags() | glog.F_FILE_SHORT | glog.F_TIME_DATE | glog.F_TIME_MILLI)  // 通过配置文件实现
 	s.Group("/", func(group *ghttp.RouterGroup) {
 		group.Middleware(
 			service.Middleware().I18NMiddleware,

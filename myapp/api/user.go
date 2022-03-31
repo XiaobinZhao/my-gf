@@ -7,7 +7,7 @@ import (
 
 type UserGetReq struct {
 	g.Meta   `path:"/user/{userUuid}" method:"get" summary:"获取单个用户" tags:"用户"`
-	UserUuid string `json:"userUuid" p:"userUuid"  v:"required" in:"path" dc:"用户UUID"`
+	UserUuid string `p:"userUuid"  v:"required" in:"path" dc:"用户UUID"`
 }
 
 type UserListReq struct {
@@ -19,13 +19,13 @@ type UserListReq struct {
 
 type UserCreateReq struct {
 	g.Meta      `path:"/user" method:"post" summary:"创建用户" tags:"用户"`
-	LoginName   string `json:"loginName" p:"loginName" v:"passport|required"  dc:"登录名,字母开头，只能包含字母、数字和下划线，长度在6~18之间"`
-	DisplayName string `json:"displayName" p:"displayName" v:"required" dc:"姓名"`
-	Password    string `json:"password" p:"password"  v:"required"  dc:"密码"`
-	Enabled     string `json:"enabled" p:"enabled" v:"required|in:enabled,disabled"  d:"enabled" dc:"用户的启用状态，enabled表示启用，disabled表示禁用"`
-	Email       string `json:"email" p:"email" v:"email"  dc:"邮箱"`
-	Phone       string `json:"phone" p:"phone"  v:"phone" dc:"电话"`
-	Desc        string `json:"desc" p:"desc"  v:"max-length:255"  dc:"描述信息"`
+	LoginName   string `p:"loginName" v:"required|passport"  dc:"登录名,字母开头，只能包含字母、数字和下划线，长度在6~18之间"`
+	DisplayName string `p:"displayName" v:"required" dc:"姓名"`
+	Password    string `p:"password"  v:"required"  dc:"密码"`
+	Enabled     string `p:"enabled" v:"required|in:enabled,disabled"  d:"enabled" dc:"用户的启用状态，enabled表示启用，disabled表示禁用"`
+	Email       string `p:"email" d:"" v:"email"  dc:"邮箱"`
+	Phone       string `p:"phone" d:"" v:"phone" dc:"电话"`
+	Desc        string `p:"desc" d:"" v:"max-length:255"  dc:"描述信息"`
 }
 
 type UserGetRes struct {

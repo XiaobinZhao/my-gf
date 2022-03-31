@@ -42,12 +42,13 @@ func (s *sUser) GetUserById(ctx context.Context, userId string) (out *model.User
 
 // 检测给定的账号是否唯一
 func (s *sUser) CheckLoginNameUnique(ctx context.Context, loginName string) error {
+	g.Log().Infof(ctx, "===========:%s \n\n", ctx.Value("I18nLanguage").(string))
 	n, err := dao.User.Ctx(ctx).Where(dao.User.Columns().LoginName, loginName).Count()
 	if err != nil {
 		return err
 	}
 	if n > 0 {
-		return gerror.NewCode(errorCode.LoginNameConflicted, g.I18n().Tf(ctx, `#{LoginNameConflicted}`, loginName))
+		return gerror.NewCode(errorCode.LoginNameConflicted, g.I18n().Tf(ctx, `{#loginNameConflicted}`, loginName))
 	}
 	return nil
 }

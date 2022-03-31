@@ -1,4 +1,0 @@
-hello = "welcome to myframe,say: %s."
-userNotExists = "User uuid=%s not exists。"
-LoginNameConflicted = "User loginName=%s already exists。"
-BadRequestParameter = "Bad request paramters: %s。"

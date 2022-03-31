@@ -1,0 +1,4 @@
+hello = "welcome to myframe,say: %s."
+userNotExists = "User uuid=%s not exists。"
+loginNameConflicted = "User loginName=%s already exists。"
+badRequestParameter = "Bad request paramters: %s。"

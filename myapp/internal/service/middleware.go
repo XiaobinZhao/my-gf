@@ -39,7 +39,7 @@ func (s *sMiddleware) I18NMiddleware(r *ghttp.Request) {
 	if lang2 != nil {
 		lang = fmt.Sprint(lang2.Val())
 	}
-	g.Log().Info(r.Context(), "切换当前语言为：", lang)
+	g.Log().Infof(r.Context(), "切换当前语言为：%s \n", lang)
 	r.SetCtx(gi18n.WithLanguage(r.Context(), lang))
 	g.Log().Info(r.Context(), g.I18n().Tf(r.Context(), `{#hello}`, "beep"))
 

@@ -1,0 +1,4 @@
+hello = "欢迎来到我的世界，基于goframe。打个招呼吧: %s。"
+userNotExists = "用户 uuid=%s 不存在。"
+loginNameConflicted = "用户登录名'%s'已被占用。"
+badRequestParameter = "请求参数异常：%s。"

@@ -255,25 +255,27 @@ Debian9 安装的golang版本默认为`golang-1.7`
    可以查看具体文件是否生成。
 
 ## 4. 开始代码开发
-### 1. main和router
+### 1. main
+
+main 入口程序，启动http server，监听端口
 
 ```go
 func main() {
-	s := g.Server()
-	s.Group("/", func(group *ghttp.RouterGroup) {
-		group.Middleware(
-			service.Middleware().I18NMiddleware,
-			//service.Middleware().Ctx,
-			service.Middleware().ResponseHandler,
-		)
-		group.Bind(
-			controller.User, // 用户
-		)
-	})
-	// 自定义文档
-	enhanceOpenAPIDoc(s)
-	// 启动Http Server
-	s.Run()
+    s := g.Server()
+    s.Group("/", func(group *ghttp.RouterGroup) {
+        group.Middleware(
+            service.Middleware().I18NMiddleware,
+            //service.Middleware().Ctx,
+            service.Middleware().ResponseHandler,
+        )
+        group.Bind(
+            controller.User, // 用户
+        )
+    })
+    // 自定义文档
+    enhanceOpenAPIDoc(s)
+    // 启动Http Server
+    s.Run()
 }
 ```
 
@@ -288,18 +290,198 @@ func main() {
 - 支持https
 - 支持server启动加载配置文件的配置项
 
-### 2. middleware
+### 2. 路由
 
+gf注册路由有多种方式：函数注册/对象注册/restful对象注册/分组路由注册/层级注册（分组嵌套）/map形式的批量注册。
 
+gf使用对象注册+分组路由，结合OpenAPIv3（swagger）作为规范化路由注册方案。
 
-### 3. openAPIDoc(swagger)
-### 4. requestModel和responseModel
-### 5. controller 和 service
-### 6. inputModel和outputModel
-### 7. dao/do/entity自动生成
-### 8. errCode
-### 9. I18N
-### 10. 配置管理
-### 11. log配置
-### 12. 单元测试
+规范化注册可以规范化接口方法参数，统一接口返回数据格式，自动化的参数校验等。
+
+**本项目使用规范化注册。**
+
+1. 通过配置文件，设置`SwaggerUI`页面
+   
+       ```toml
+       # HTTP Server.
+       [server]
+           openapiPath    = "/api.json"
+           swaggerPath    = "/swagger"
+       ```
+   
+ 2. 路由绑定
+
+    使用对象注册+分组路由的方式在main入口程序绑定路由。
+
+ 3. 请求/返回结构体的定义: 包含了输入参数的定义，也包含了接口的定义，特别是路由地址、请求方法、接口描述等信息。为保证命名规范化，输入数据结构以`XxxReq`方式命名，输出数据结构以`XxxRes`方式命名。即便输入或者输出参数为空，也需要定义相应的数据结构，这样的目的一个是便于后续扩展，另一个是便于接口信息的管理。
+
+    ```go
+    // myapp/api/user.go
+    type UserUpdateReq struct {
+    	g.Meta      `path:"/user" method:"put" summary:"更新用户" tags:"用户"`
+    	LoginName   string `json:"loginName" p:"loginName" v:"passport"  dc:"登录名"`
+    	DisplayName string `json:"displayName" p:"displayName" dc:"姓名"`
+    	Enabled     string `json:"enabled" p:"enabled" v:"in:enabled,disabled"  d:"enabled" dc:"用户的启用状态"`
+    	Email       string `json:"email" p:"email" d:"" v:"email"  dc:"邮箱"`
+    	Phone       string `json:"phone" p:"phone" d:"" v:"phone" dc:"电话"`
+    	Desc        string `json:"desc" p:"desc" d:"" v:"max-length:255"  dc:"描述信息"`
+    }
+    
+    type UserGetRes struct {
+    	Uuid        string      `json:"uuid"        dc:"uuid"`
+    	LoginName   string      `json:"loginName"   dc:"登录名"`
+    	DisplayName string      `json:"displayName" dc:"姓名"`
+    	Email       string      `json:"email"       dc:"邮箱"`
+    	Phone       string      `json:"phone"       dc:"电话"`
+    	Enabled     string      `json:"enabled"     dc:"用户的启用状态，enabled表示启用，disabled表示禁用"`
+    	Desc        string      `json:"desc"        dc:"描述信息"`
+    	CreatedAt   *gtime.Time `json:"createdAt"   dc:"创建时间"`
+    	UpdatedAt   *gtime.Time `json:"updatedAt"   dc:"最后修改时间"`
+    }
+    ```
+
+    - 这里的UserUpdateReq结构体，定义了入参的字段有那些，以及每个字段的格式，比如是否必须、长度、正则等。此处必须要提的是gf的validate功能很是舒爽，提供了40多个内置的校验规则，包含email、phone、passport等常见的正则。
+
+      这里的校验是通过p标签来实现的：`p`标签是可选的，默认情况下会通过 **忽略特殊字符（`-/_/空格`）+不区分大小写** 的规则进行属性名称匹配转换。所以API的请求参数是可以忽略大小写以及特殊字符的。
+
+      UserUpdateReq我加上了json标签，目的是想要在swaggerUI上显示的demo结构与response结构一致。
+
+    - 使用g.Meta定义接口，包含url path;url method,以及关联swagger
+
+4. 路由方法定义
+
+   ```go
+   func Handler(ctx context.Context, req *Request) (res *Response, err error)
+   ```
+
+   路由方法使用固定的格式，如上。`req *Request`就是上一步骤定义的请求结构体，gf通过这个参数把路由与路由方法关联起来。
+
+5. 返回结构体定义
+
+   正如请求结构体定义章节所说，返回结构体以`XxxRes`方式命名。即便输出参数为空，也需要定义相应的数据结构。
+
+6. 数据返回
+
+   经过返回结构体定义规范，我们得到了API请求的返回数据，此时我们还可以继续对返回数据进行整理，得到统一的返回值数据结构。此处使用后置middleware来处理。
+
+   ```go
+   // myapp/internal/service/middleware.go
+   func (s *sMiddleware) ResponseHandler(r *ghttp.Request) {
+   	r.Middleware.Next()
+   
+   	// 如果已经有返回内容，那么该中间件什么也不做
+   	if r.Response.BufferLength() > 0 {
+   		return
+   	}
+   
+   	var (
+   		err  error
+   		res  interface{}
+   		code gcode.Code = gcode.CodeOK
+   	)
+   	res, err = r.GetHandlerResponse()
+   	if err != nil {
+   
+   		code = gerror.Code(err)
+   		if code == errorCode.CodeNil {
+   			code = errorCode.CodeInternalError
+   		}
+   		if detail, ok := code.Detail().(errorCode.MyCodeDetail); ok {
+   			r.Response.WriteStatus(detail.HttpCode)
+   			r.Response.ClearBuffer() // gf 会自动往response追加http.StatusText。此处不需要，所以删除掉。
+   		}
+   		g.Log().Errorf(r.GetCtx(), "%+v", err)
+   		response.JsonExit(r, code.Code(), err.Error())
+   	} else {
+   		response.JsonExit(r, code.Code(), "", res)
+   	}
+   }
+   
+   // myapp/utility/response/response.go
+   
+   // Json 返回标准JSON数据。
+   func Json(r *ghttp.Request, code int, message string, data ...interface{}) {
+   	var responseData interface{}
+   	if len(data) > 0 {
+   		responseData = data[0]
+   	} else {
+   		responseData = g.Map{}
+   	}
+   	r.Response.WriteJson(JsonRes{
+   		Code:    code,
+   		Message: message,
+   		Data:    responseData,
+   	})
+   	r.Response.Header().Set("Content-Type", "application/json;charset=utf-8") // 重置response head增加charset=utf-8
+   }
+   
+   // JsonExit 返回标准JSON数据并退出当前HTTP执行函数。
+   func JsonExit(r *ghttp.Request, code int, message string, data ...interface{}) {
+   	Json(r, code, message, data...)
+   	r.Exit()
+   }
+   ```
+
+   我们在这里统一设置API的response的数据结构：
+
+   ```go
+   JsonRes{
+   		Code:    code,
+   		Message: message,
+   		Data:    responseData,
+   	}
+   ```
+
+   并且设置Content-Type、Response.WriteStatus。
+
+   特别注意：Response.WriteStatus的设置，gf会自动再response添加http.StatusText，所以要清理一下： `r.Response.ClearBuffer()`。
+
+### 3. middleware
+
+gf支持使用middleware，如上一章提到的ResponseHandler middleware。此外，gf还支持多种middleware.具体可以查看官网文档。
+
+### 4. openAPIDoc(swagger)
+
+除了我们的业务路由之外，`Server`自动帮我们注册了两个路由：`/api.json`和`/swagger/*`。前者是自动生成的基于标准的`OpenAPIv3`协议的接口文档，后者是自动生成`SwaggerUI`页面，方便开发者查看和调试。这两个功能默认是关闭的，开发者可以通过前面配置文件示例中的`openapiPath`和`swaggerPath`两个配置项开启。
+
+### 6. controller 
+
+### 7. service
+
+service会调用底层dao进行orm操作。
+
+1. OmitEmpty()
+
+   空值会影响于写入/更新操作方法，如`Insert`, `Replace`, `Update`, `Save`操作。当 `map`/`struct` 中存在空值如 `nil`,`""`,`0` 时，默认情况下，`gdb`将会将其当做正常的输入参数，因此这些参数也会被更新到数据表。如以下操作（以`map`为例，`struct`同理）：
+
+   ```go
+   // UPDATE `user` SET `name`='john',update_time=null WHERE `id`=1
+   db.Table("user").Data(g.Map{
+       "name"        : "john",
+       "update_time" : nil,
+   }).Where("id", 1).Update()
+   ```
+
+   针对空值情况，我们可以通过`OmitEmpty`方法来过滤掉这些空值。
+
+   ```go
+   // UPDATE `user` SET `name`='john' WHERE `id`=1
+   db.Table("user").OmitEmpty().Data(g.Map{
+       "name"        : "john",
+       "update_time" : nil,
+   }).Where("id", 1).Update()
+   ```
+
+   关于`omitempty`标签与`OmitEmpty`方法：
+
+   1. 针对于`struct`的空值过滤大家会想到`omitempty`的标签。该标签常用于`json`转换的空值过滤，也在某一些第三方的`ORM`库中用作`struct`到数据表字段的空值过滤，即当属性为空值时不做转换。
+   2. `omitempty`标签与`OmitEmpty`方法所达到的效果是一样的。在`ORM`操作中，我们不建议对`struct`使用`omitempty`的标签来控制字段的空值过滤，而建议使用`OmitEmpty`方法来做控制。因为该标签一旦加上之后便绑定到了`struct`上，没有办法做灵活控制；而通过`OmitEmpty`方法使得开发者可以选择性地、根据业务场景对`struct`做空值过滤，操作更加灵活。
+
+### 7. inputModel和outputModel
+### 8. dao/do/entity自动生成
+### 9. errCode
+### 10. I18N
+### 11. 配置管理
+### 12. log配置
+### 13. 单元测试
 

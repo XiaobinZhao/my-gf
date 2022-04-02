@@ -42,7 +42,6 @@ func (s *sUser) GetUserById(ctx context.Context, userId string) (out *model.User
 
 // 检测给定的账号是否唯一
 func (s *sUser) CheckLoginNameUnique(ctx context.Context, loginName string) error {
-	g.Log().Infof(ctx, "===========:%s \n\n", ctx.Value("I18nLanguage").(string))
 	n, err := dao.User.Ctx(ctx).Where(dao.User.Columns().LoginName, loginName).Count()
 	if err != nil {
 		return err
@@ -73,6 +72,26 @@ func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (u
 		return err
 	})
 	return user.Uuid, err
+}
+
+func (s *sUser) UpdateUser(ctx context.Context, input *model.UserUpdateInput) (rowsAffected int64, err error) {
+	err = dao.User.Transaction(ctx, func(ctx context.Context, tx *gdb.TX) error {
+		if len(input.LoginName) > 0 {
+			if err := s.CheckLoginNameUnique(ctx, input.LoginName); err != nil {
+				return err
+			}
+		}
+		result, err := dao.User.Ctx(ctx).OmitEmpty().Data(input).
+			FieldsEx(dao.User.Columns().Uuid).
+			Where(dao.User.Columns().Uuid, input.UserUuid).
+			Update()
+		if err != nil {
+			return err
+		}
+		rowsAffected, err = result.RowsAffected()
+		return err
+	})
+	return
 }
 
 // 根据请求的排序字符串获取数据库对应的字段

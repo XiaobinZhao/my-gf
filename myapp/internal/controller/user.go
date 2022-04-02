@@ -45,9 +45,25 @@ func (a *cUser) Create(ctx context.Context, req *api.UserCreateReq) (res *api.Us
 	return a.Get(ctx, userGetReq)
 }
 
+func (a *cUser) Update(ctx context.Context, req *api.UserUpdateReq) (res *api.UserGetRes, err error) {
+	res = &api.UserGetRes{}
+	userUpdateInput := &model.UserUpdateInput{}
+	copier.Copy(userUpdateInput, req)
+	rowsAffected, err := service.User().UpdateUser(ctx, userUpdateInput)
+	if err != nil {
+		return nil, err
+	}
+	if rowsAffected == 1 { // 更新成功，应只会更新一条数据
+		userGetReq := &api.UserGetReq{UserUuid: req.UserUuid}
+		return a.Get(ctx, userGetReq)
+	} else {
+		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#userNotExists}`, req.UserUuid))
+	}
+}
+
 func (a *cUser) List(ctx context.Context, req *api.UserListReq) (res *api.UserListRes, err error) {
 	res = &api.UserListRes{}
-	sortKey := ""
+	sortKey := "createdAt" // 默认使用创建时间排序
 	sortValue := "asc"
 	if len(req.Sort) > 0 {
 		if req.Sort[:1] == "-" {

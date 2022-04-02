@@ -4,9 +4,8 @@ import (
 	"myapp/internal/consts"
 	"myapp/internal/controller"
 	"myapp/internal/service"
-	_ "myapp/packed"
 
-	"github.com/gogf/gf/v2/os/glog"
+	_ "myapp/internal/packed"
 
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -19,8 +18,9 @@ import (
 // @schemes     http
 func main() {
 	s := g.Server()
+	g.I18n().SetPath("resource/i18n") // i18n目录默认是根目录或者gres资源目录；在研发阶段需要重设一下i18n目录
 	// 设置行号，日期，时间：日期+时间+毫秒，如：2009-01-23 01:23:23.675
-	g.Log().SetFlags(g.Log().GetFlags() | glog.F_FILE_SHORT | glog.F_TIME_DATE | glog.F_TIME_MILLI) // 通过配置文件实现
+	//g.Log().SetFlags(g.Log().GetFlags() | glog.F_FILE_SHORT | glog.F_TIME_DATE | glog.F_TIME_MILLI) // 此处注释掉，通过配置文件实现
 	s.Group("/", func(group *ghttp.RouterGroup) {
 		group.Middleware(
 			//service.Middleware().Ctx,

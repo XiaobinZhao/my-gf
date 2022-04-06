@@ -28,7 +28,8 @@ func main() {
 			service.Middleware().ResponseHandler,
 		)
 		group.Bind(
-			controller.User, // 用户
+			controller.User,    // 用户
+			controller.Desktop, // 桌面
 		)
 	})
 	// 自定义丰富文档

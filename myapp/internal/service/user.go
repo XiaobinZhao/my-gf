@@ -67,9 +67,9 @@ func (s *sUser) EncryptPassword(loginName, password string) string {
 }
 
 func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (userUuid string, err error) {
-	var user *entity.User
+	user := &entity.User{}
 	err = dao.User.Transaction(ctx, func(ctx context.Context, tx *gdb.TX) error {
-		if err := gconv.Struct(input, &user); err != nil {
+		if err := gconv.Struct(input, user); err != nil {
 			return err
 		}
 		if err := s.CheckLoginNameUnique(ctx, user.LoginName); err != nil {
@@ -77,7 +77,7 @@ func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (u
 		}
 		user.Password = s.EncryptPassword(user.LoginName, user.Password)
 		user.Uuid = guid.S()
-		_, err := dao.User.Ctx(ctx).Data(user).OmitEmpty().Save()
+		_, err := dao.User.Ctx(ctx).Data(user).OmitEmpty().Insert()
 		return err
 	})
 	return user.Uuid, err
@@ -138,9 +138,6 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 	// total
 	out.Total, err = m.Count()
 	// 数据转换，db->model
-	//if err := all.ScanList(&out.List, "User"); err != nil {
-	//	return nil, err
-	//}
 	if err := all.Structs(&out.List); err != nil {
 		return nil, err
 	}

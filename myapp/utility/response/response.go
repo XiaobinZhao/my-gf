@@ -1,6 +1,8 @@
 package response
 
 import (
+	"reflect"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 )
@@ -17,6 +19,9 @@ func Json(r *ghttp.Request, code int, message string, data ...interface{}) {
 	var responseData interface{}
 	if len(data) > 0 {
 		responseData = data[0]
+		if reflect.ValueOf(responseData).IsNil() { // responseData是interface类型，判空需要使用反射；
+			responseData = g.Map{} // response 为nil时，返回{}
+		}
 	} else {
 		responseData = g.Map{}
 	}

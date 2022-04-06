@@ -33,6 +33,17 @@ func (a *cUser) Get(ctx context.Context, req *api.UserGetReq) (res *api.UserGetR
 	return
 }
 
+func (a *cUser) Delete(ctx context.Context, req *api.UserDeleteReq) (res *api.EmptyRes, err error) {
+	rowsAffected, err := service.User().DeleteUserById(ctx, req.UserUuid)
+	if err != nil {
+		return nil, err
+	}
+	if rowsAffected != 1 { // uuid唯一值，删除成功只会删除一条数据
+		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#userNotExists}`, req.UserUuid))
+	}
+	return
+}
+
 func (a *cUser) Create(ctx context.Context, req *api.UserCreateReq) (res *api.UserGetRes, err error) {
 	res = &api.UserGetRes{}
 	userCreateInput := &model.UserCreateInput{}

@@ -7,7 +7,6 @@ import (
 	"myapp/internal/model"
 	"myapp/internal/model/entity"
 	"myapp/internal/service/internal/dao"
-	"strings"
 
 	"github.com/gogf/gf/v2/database/gdb"
 
@@ -37,6 +36,16 @@ func (s *sUser) GetUserById(ctx context.Context, userId string) (out *model.User
 	if out == nil {
 		return nil, nil
 	}
+	return
+}
+
+func (s *sUser) DeleteUserById(ctx context.Context, userId string) (rowsAffected int64, err error) {
+	result, err := dao.User.Ctx(ctx).Where(dao.User.Columns().Uuid, userId).Delete()
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err = result.RowsAffected()
+
 	return
 }
 
@@ -94,24 +103,6 @@ func (s *sUser) UpdateUser(ctx context.Context, input *model.UserUpdateInput) (r
 	return
 }
 
-// 根据请求的排序字符串获取数据库对应的字段
-// 为什么要做字段对应转换？因为前端传参是根据response字段传的，response字段一般使用request model的json格式。
-// 而json格式字段和数据库字段以及entity的字段都不一样，比如：json(loginName)和数据库字段(login_name)以及entity的字段(LoginName)
-// 字段格式不同，导致字符串比较不一致。所以需要做一下忽略格式的对比，返回对应的数据库字段
-func (s *sUser) getSortField(ctx context.Context, inputColumn string) string {
-	tableColumnsStr := dao.User.Ctx(ctx).GetFieldsStr()
-	for _, column := range strings.Split(tableColumnsStr, ",") {
-		// 比较方法：去除反引号`和_;忽略大小写
-		tableColumn := column[1 : len(column)-1]                           // 去除字符串的反引号`
-		column = strings.ReplaceAll(strings.ToLower(tableColumn), "_", "") // 忽略大小写，去除_
-		inputColumn = strings.ReplaceAll(strings.ToLower(inputColumn), "_", "")
-		if strings.Compare(column, inputColumn) == 0 {
-			return tableColumn
-		}
-	}
-	return ""
-}
-
 func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out *model.UserListOutput, err error) {
 	var (
 		m           = dao.User.Ctx(ctx)
@@ -133,7 +124,7 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 	// 分页
 	listModel := m.Page(input.Page, input.Size)
 	// 排序
-	sortField := s.getSortField(ctx, input.SortKey)
+	sortField := GetSortField(ctx, input.SortKey, dao.User.Ctx(ctx).GetFieldsStr())
 	if len(input.SortKey) > 0 && sortField != "" {
 		listModel = listModel.Order(sortField, input.SortValue)
 	}

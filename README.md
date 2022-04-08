@@ -211,14 +211,14 @@ Debian9 安装的golang版本默认为`golang-1.7`
    得到如下输出证明OK：
 
    ```shell
-   GoFrame CLI Tool v2.0.0-rc, https://goframe.org
-   GoFrame Version: cannot find go.mod
+   GoFrame CLI Tool v2.0.6, https://goframe.org
+   GoFrame Version: v2.0.6 in current go.mod
    CLI Installed At: E:\go-workspace\bin\gf.exe
    CLI Built Detail:
-     Go Version:  go1.17.6
-     GF Version:  v2.0.0-beta
-     Git Commit:  2022-01-24 11:02:57 37d535f61e975dff1765f98e3b505aeccfec338e
-     Build Time:  2022-01-24 03:01:42
+     Go Version:  go1.17.7
+     GF Version:  v2.0.6
+     Git Commit:  2022-03-31 16:57:32 66803fd6641e31c60f0489180668243ea092b87b
+     Build Time:  2022-03-31 16:55:38
    ```
 
 ## 2. 数据库表设计

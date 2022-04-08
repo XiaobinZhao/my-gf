@@ -14,9 +14,6 @@ import (
 
 	"github.com/gogf/gf/v2/crypto/gmd5"
 
-	"github.com/gogf/gf/v2/frame/g"
-
-	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -56,7 +53,7 @@ func (s *sUser) CheckLoginNameUnique(ctx context.Context, loginName string) erro
 		return err
 	}
 	if n > 0 {
-		return gerror.NewCode(errorCode.LoginNameConflicted, g.I18n().Tf(ctx, `{#loginNameConflicted}`, loginName))
+		return errorCode.NewMyErr(ctx, errorCode.LoginNameConflicted, loginName)
 	}
 	return nil
 }

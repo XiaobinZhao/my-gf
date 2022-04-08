@@ -64,7 +64,7 @@ func (s *sMiddleware) ResponseHandler(r *ghttp.Request) {
 	if err != nil {
 
 		code = gerror.Code(err)
-		if code == errorCode.CodeNil {
+		if code == errorCode.CodeNil { // code是可比较的结构体
 			code = errorCode.CodeInternalError
 		}
 		if detail, ok := code.Detail().(errorCode.MyCodeDetail); ok {

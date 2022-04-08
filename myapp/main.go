@@ -5,7 +5,7 @@ import (
 	"myapp/internal/controller"
 	"myapp/internal/service"
 
-	_ "myapp/internal/packed"
+	_ "myapp/packed"
 
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"

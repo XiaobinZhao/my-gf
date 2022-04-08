@@ -7,10 +7,6 @@ import (
 	"myapp/internal/model"
 	"myapp/internal/service"
 
-	"github.com/gogf/gf/v2/frame/g"
-
-	"github.com/gogf/gf/v2/errors/gerror"
-
 	"github.com/jinzhu/copier"
 )
 
@@ -25,7 +21,7 @@ func (a *cUser) Get(ctx context.Context, req *api.UserGetReq) (res *api.UserGetR
 		return nil, err
 	}
 	if getUser == nil {
-		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#userNotExists}`, req.UserUuid))
+		return nil, errorCode.NewMyErr(ctx, errorCode.UserNotFound, req.UserUuid)
 	}
 	if err = copier.Copy(res, getUser); err != nil {
 		return nil, err
@@ -39,7 +35,7 @@ func (a *cUser) Delete(ctx context.Context, req *api.UserDeleteReq) (res *api.Em
 		return nil, err
 	}
 	if rowsAffected != 1 { // uuid唯一值，删除成功只会删除一条数据
-		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#userNotExists}`, req.UserUuid))
+		return nil, errorCode.NewMyErr(ctx, errorCode.UserNotFound, req.UserUuid)
 	}
 	return
 }
@@ -68,7 +64,7 @@ func (a *cUser) Update(ctx context.Context, req *api.UserUpdateReq) (res *api.Us
 		userGetReq := &api.UserGetReq{UserUuid: req.UserUuid}
 		return a.Get(ctx, userGetReq)
 	} else {
-		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#userNotExists}`, req.UserUuid))
+		return nil, errorCode.NewMyErr(ctx, errorCode.UserNotFound, req.UserUuid)
 	}
 }
 

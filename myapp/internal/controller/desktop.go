@@ -7,10 +7,6 @@ import (
 	"myapp/internal/model"
 	"myapp/internal/service"
 
-	"github.com/gogf/gf/v2/frame/g"
-
-	"github.com/gogf/gf/v2/errors/gerror"
-
 	"github.com/jinzhu/copier"
 )
 
@@ -25,7 +21,7 @@ func (a *cDesktop) Get(ctx context.Context, req *api.DesktopGetReq) (res *api.De
 		return nil, err
 	}
 	if getDesktop == nil {
-		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#desktopNotExists}`, req.Uuid))
+		return nil, errorCode.NewMyErr(ctx, errorCode.DesktopNotFound, req.Uuid)
 	}
 	if err = copier.Copy(res, getDesktop); err != nil {
 		return nil, err
@@ -39,7 +35,7 @@ func (a *cDesktop) Delete(ctx context.Context, req *api.DesktopDeleteReq) (res *
 		return nil, err
 	}
 	if rowsAffected != 1 { // uuid唯一值，删除成功只会删除一条数据
-		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#desktopNotExists}`, req.Uuid))
+		return nil, errorCode.NewMyErr(ctx, errorCode.DesktopNotFound, req.Uuid)
 	}
 	return
 }
@@ -68,7 +64,7 @@ func (a *cDesktop) Update(ctx context.Context, req *api.DesktopUpdateReq) (res *
 		userGetReq := &api.DesktopGetReq{Uuid: req.Uuid}
 		return a.Get(ctx, userGetReq)
 	} else {
-		return nil, gerror.NewCode(errorCode.CodeNotFound, g.I18n().Tf(ctx, `{#desktopNotExists}`, req.Uuid))
+		return nil, errorCode.NewMyErr(ctx, errorCode.DesktopNotFound, req.Uuid)
 	}
 }
 

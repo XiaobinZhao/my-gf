@@ -58,9 +58,7 @@ func (s *sMiddleware) ResponseHandler(r *ghttp.Request) {
 		return
 	}
 
-	res, err := r.GetHandlerResponse()
-
-	formatResponse(r, res, err)
+	formatResponse(r, r.GetHandlerResponse(), r.GetError())
 }
 
 func formatResponse(r *ghttp.Request, res interface{}, err error) {

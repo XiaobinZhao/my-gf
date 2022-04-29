@@ -43,7 +43,6 @@ func main() {
 
 	s.Group("/", func(group *ghttp.RouterGroup) {
 		group.Middleware(
-			//service.Middleware().Ctx,
 			service.Middleware().TokenAuth,
 		)
 		//group.Bind(

@@ -64,4 +64,4 @@ CREATE TABLE `user` (
 -- ----------------------------
 -- Records of user
 -- ----------------------------
-INSERT INTO `user` VALUES ('6c2fi104x40cj8vq9a047j0200bht99c', 'zhangsan', '张三', 'a772bd88faa08cc0e8eac2c63deb5412', 'san.zhang@gmail.com', '17628272827', 'enabled', '我是zhang三', '2022-04-13 13:57:28', '2022-04-13 13:57:28');
+INSERT INTO `user` VALUES ('6c2fi104x40cj8vq9a047j0200bht99c', 'admin', 'admin', '77e89dd878d0357d961e9566b70c0291', '', '', 'enabled', 'admin user', '2022-04-13 13:57:28', '2022-04-13 13:57:28');

@@ -60,9 +60,9 @@ func (s *sUser) CheckLoginNameUnique(ctx context.Context, userName string) error
 	return nil
 }
 
-// 将密码按照内部算法进行加密:md5（登录名+密码）
-func (s *sUser) EncryptPassword(userName, password string) string {
-	return gmd5.MustEncrypt(userName + password)
+// 将密码按照内部算法进行加密:md5（uuid+密码）
+func (s *sUser) EncryptPassword(userKey, password string) string {
+	return gmd5.MustEncrypt(userKey + password)
 }
 
 func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (userUuid string, err error) {
@@ -74,7 +74,7 @@ func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (u
 		if err := s.CheckLoginNameUnique(ctx, user.UserName); err != nil {
 			return err
 		}
-		user.Password = s.EncryptPassword(user.UserName, user.Password)
+		user.Password = s.EncryptPassword(user.Uuid, user.Password)
 		user.Uuid = guid.S()
 		_, err := dao.User.Ctx(ctx).Data(user).OmitEmpty().Insert()
 		return err
@@ -159,7 +159,7 @@ func (s *sUser) Login(ctx context.Context, input *model.UserLoginInput) (user *e
 	if user == nil {
 		return nil, errorCode.NewMyErr(ctx, errorCode.UserNotFound, "UserName", input.UserName)
 	}
-	if user.Password == s.EncryptPassword(input.UserName, input.Password) {
+	if user.Password == s.EncryptPassword(user.Uuid, input.Password) {
 		return user, nil
 	} else {
 		return user, errorCode.NewMyErr(ctx, errorCode.PasswordError)

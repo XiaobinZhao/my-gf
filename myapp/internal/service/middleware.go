@@ -1,9 +1,10 @@
 package service
 
 import (
-	"fmt"
 	"myapp/internal/errorCode"
+	"myapp/internal/model"
 	"myapp/utility/response"
+	"myapp/utility/token"
 
 	"github.com/gogf/gf/v2/frame/g"
 
@@ -28,21 +29,22 @@ func Middleware() *sMiddleware {
  * @Description I18N中间件，根据Header上的Lang参数或者Query参数来设置当前的I18N.Query参数优先级高于header。
  **/
 func (s *sMiddleware) I18NMiddleware(r *ghttp.Request) {
-	configLang, _ := g.Cfg().Get(r.Context(), "server.lang", "zh_CN")
-	lang := fmt.Sprint(configLang)
-	lang1 := r.GetHeader("Lang") // 获取不到返回""
-	lang2 := r.GetQuery("Lang")  // 获取不到返回 nil
-	// url参数Lang优先级高于header的Lang
-	if gconv.Bool(lang1) {
-		lang = lang1
-	}
-	if lang2 != nil {
-		lang = fmt.Sprint(lang2.Val())
-	}
-	g.Log().Infof(r.Context(), "切换当前语言为：%s \n", lang)
-	r.SetCtx(gi18n.WithLanguage(r.Context(), lang))
-	g.Log().Info(r.Context(), g.I18n().Tf(r.Context(), `{#hello}`, "beep"))
+	configLang := g.Cfg().MustGet(r.Context(), "server.lang", "zh-CN").String()
 
+	langInHeader := r.GetHeader("Lang")        // 获取不到返回""
+	langInQuery := r.GetQuery("Lang").String() // 获取不到返回 nil
+	// url参数Lang优先级高于header的Lang
+	requestLang := ""
+	if gconv.Bool(langInHeader) {
+		requestLang = langInHeader
+	}
+	if gconv.Bool(langInQuery) {
+		requestLang = langInQuery
+	}
+	if requestLang != "" && requestLang != configLang {
+		g.Log().Debugf(r.Context(), "切换当前语言为：%s", requestLang)
+		r.SetCtx(gi18n.WithLanguage(r.Context(), requestLang))
+	}
 	r.Middleware.Next()
 }
 
@@ -52,76 +54,67 @@ func (s *sMiddleware) ResponseHandler(r *ghttp.Request) {
 
 	// 如果已经有返回内容，那么该中间件什么也不做
 	if r.Response.BufferLength() > 0 {
+		g.Log().Warningf(r.GetCtx(), "response exists something, skip ResponseHandler middleware")
 		return
 	}
 
+	res, err := r.GetHandlerResponse()
+
+	formatResponse(r, res, err)
+}
+
+func formatResponse(r *ghttp.Request, res interface{}, err error) {
+
 	var (
-		err  error
-		res  interface{}
 		code gcode.Code = gcode.CodeOK
 	)
-	res, err = r.GetHandlerResponse()
 	if err != nil {
-
 		code = gerror.Code(err)
 		if code == errorCode.CodeNil { // code是可比较的结构体
 			code = errorCode.CodeInternalError
 		}
 		if detail, ok := code.Detail().(errorCode.MyCodeDetail); ok {
-			r.Response.WriteStatus(detail.HttpCode)
-			r.Response.ClearBuffer() // gf 会自动往response追加http.StatusText。此处不需要，所以删除掉。
+			r.Response.WriteStatus(detail.HttpCode) // 修改默认的状态码，并清除已经写入的response内容
+			r.Response.ClearBuffer()                // gf 会自动往response追加http.StatusText。此处不需要，所以删除掉。
 		}
 		g.Log().Errorf(r.GetCtx(), "%+v", err)
-		response.JsonExit(r, code.Code(), err.Error())
+		response.JsonExit(r, code.Code(), gerror.Current(err).Error()) // 只暴露当前error给调用者
 	} else {
 		response.JsonExit(r, code.Code(), "", res)
 	}
 }
 
-//// 自定义上下文对象
-//func (s *sMiddleware) Ctx(r *ghttp.Request) {
-//	// 初始化，务必最开始执行
-//	customCtx := &model.Context{
-//		Session: r.Session,
-//		Data:    make(g.Map),
-//	}
-//	Context().Init(r, customCtx)
-//	if userEntity := Session().GetUser(r.Context()); userEntity.Id > 0 {
-//		adminId := g.Cfg().MustGet(r.Context(), "setting.adminId", consts.DefaultAdminId).Uint()
-//		customCtx.User = &model.ContextUser{
-//			Id:       userEntity.Id,
-//			Passport: userEntity.Passport,
-//			Nickname: userEntity.Nickname,
-//			Avatar:   userEntity.Avatar,
-//			IsAdmin:  userEntity.Id == adminId,
-//		}
-//	}
-//	// 将自定义的上下文对象传递到模板变量中使用
-//	r.Assigns(g.Map{
-//		"Context": customCtx,
-//	})
-//	// 执行下一步请求逻辑
-//	r.Middleware.Next()
-//}
-//
-//// 前台系统权限控制，用户必须登录才能访问
-//func (s *sMiddleware) Auth(r *ghttp.Request) {
-//	user := Session().GetUser(r.Context())
-//	if user.Id == 0 {
-//		_ = Session().SetNotice(r.Context(), &model.SessionNotice{
-//			Type:    consts.SessionNoticeTypeWarn,
-//			Content: "未登录或会话已过期，请您登录后再继续",
-//		})
-//		// 只有GET请求才支持保存当前URL，以便后续登录后再跳转回来。
-//		if r.Method == "GET" {
-//			_ = Session().SetLoginReferer(r.Context(), r.GetUrl())
-//		}
-//		// 根据当前请求方式执行不同的返回数据结构
-//		if r.IsAjaxRequest() {
-//			response.JsonRedirectExit(r, 1, "", s.LoginUrl)
-//		} else {
-//			r.Response.RedirectTo(s.LoginUrl)
-//		}
-//	}
-//	r.Middleware.Next()
-//}
+func (s *sMiddleware) MiddlewareCORS(r *ghttp.Request) {
+	r.Response.CORSDefault()
+	r.Middleware.Next()
+}
+
+func (s *sMiddleware) Ctx(r *ghttp.Request) {
+	// 初始化，务必最开始执行
+	customCtx := &model.Context{
+		Data: make(g.Map),
+	}
+	Context().Init(r, customCtx)
+
+	r.Middleware.Next()
+}
+
+/**
+ * @description 认证token;1. 从request获取token 2. 从cache获取对应token，进行校验  3. 校验成功，把cache缓存的数据放入context
+ * @param r *ghttp.Request
+ **/
+func (s *sMiddleware) TokenAuth(r *ghttp.Request) {
+	// 1. 从request获取token
+	tokenStr, err := token.GetRequestToken(r)
+	if err != nil {
+		formatResponse(r, nil, err)
+	}
+	// 2. 从cache获取对应token，进行校验
+	myCacheToken, err := token.Instance().ValidToken(r.Context(), tokenStr)
+	if err != nil {
+		formatResponse(r, nil, err)
+	}
+	// 3. 校验成功，把cache缓存的数据放入context
+	Context().SetToken(r.Context(), myCacheToken)
+	r.Middleware.Next()
+}

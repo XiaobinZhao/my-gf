@@ -6,29 +6,29 @@ import (
 )
 
 type DesktopGetReq struct {
-	g.Meta `path:"/desktop/{uuid}" method:"get" summary:"获取单个桌面" tags:"云桌面"`
+	g.Meta `summary:"获取单个桌面" tags:"云桌面"`
 	Uuid   string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"桌面UUID"`
 }
 
 type DesktopListReq struct {
-	g.Meta `path:"/desktop" method:"get" summary:"获取桌面列表" tags:"云桌面"`
+	g.Meta `summary:"获取桌面列表" tags:"云桌面"`
 	CommonPaginationReq
 	SearchStr string `json:"searchStr" p:"searchStr" in:"query" dc:"模糊查询，匹配名称/描述"`
 	Sort      string `json:"sort" p:"sort" v:"regex:^[+-].+" in:"query" dc:"排序字段，+表示升序ASC，-表示降序DESC,比如+name：表示按照name升序排列"`
 }
 
 type DesktopCreateReq struct {
-	g.Meta `path:"/desktop" method:"post" summary:"创建桌面" tags:"云桌面"`
+	g.Meta `summary:"创建桌面" tags:"云桌面"`
 	DesktopBase
 }
 
 type DesktopDeleteReq struct {
-	g.Meta `path:"/desktop/{uuid}" method:"delete" summary:"删除单个桌面" tags:"云桌面"`
+	g.Meta `summary:"删除单个桌面" tags:"云桌面"`
 	Uuid   string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"桌面UUID"`
 }
 
 type DesktopUpdateReq struct {
-	g.Meta          `path:"/desktop/{uuid}" method:"patch" summary:"更新单个桌面" tags:"云桌面"`
+	g.Meta          `summary:"更新单个桌面" tags:"云桌面"`
 	Uuid            string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"桌面UUID"`
 	VmUuid          string `json:"vmUuid" p:"vmUuid" v:"max-length:32" dc:"虚拟化平台上虚机的uuid"`
 	DisplayName     string `json:"displayName" p:"displayName" dc:"桌面的显示名称"`

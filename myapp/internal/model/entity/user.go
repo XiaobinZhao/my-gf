@@ -8,10 +8,10 @@ import (
 	"github.com/gogf/gf/v2/os/gtime"
 )
 
-// User is the golang structure for table user.
+// Token is the golang structure for table user.
 type User struct {
 	Uuid        string      `json:"uuid"        description:"uuid"`
-	LoginName   string      `json:"loginName"   description:"登录名"`
+	UserName    string      `json:"userName"   description:"登录名"`
 	DisplayName string      `json:"displayName" description:"姓名"`
 	Password    string      `json:"password"    description:"密码"`
 	Email       string      `json:"email"       description:"邮箱"`

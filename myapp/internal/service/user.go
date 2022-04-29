@@ -8,6 +8,8 @@ import (
 	"myapp/internal/model/entity"
 	"myapp/internal/service/internal/dao"
 
+	"github.com/gogf/gf/v2/frame/g"
+
 	"github.com/gogf/gf/v2/database/gdb"
 
 	"github.com/gogf/gf/v2/util/guid"
@@ -47,20 +49,20 @@ func (s *sUser) DeleteUserById(ctx context.Context, userId string) (rowsAffected
 }
 
 // 检测给定的账号是否唯一
-func (s *sUser) CheckLoginNameUnique(ctx context.Context, loginName string) error {
-	n, err := dao.User.Ctx(ctx).Where(dao.User.Columns().LoginName, loginName).Count()
+func (s *sUser) CheckLoginNameUnique(ctx context.Context, userName string) error {
+	n, err := dao.User.Ctx(ctx).Where(dao.User.Columns().UserName, userName).Count()
 	if err != nil {
 		return err
 	}
 	if n > 0 {
-		return errorCode.NewMyErr(ctx, errorCode.LoginNameConflicted, loginName)
+		return errorCode.NewMyErr(ctx, errorCode.LoginNameConflicted, userName)
 	}
 	return nil
 }
 
 // 将密码按照内部算法进行加密:md5（登录名+密码）
-func (s *sUser) EncryptPassword(loginName, password string) string {
-	return gmd5.MustEncrypt(loginName + password)
+func (s *sUser) EncryptPassword(userName, password string) string {
+	return gmd5.MustEncrypt(userName + password)
 }
 
 func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (userUuid string, err error) {
@@ -69,10 +71,10 @@ func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (u
 		if err := gconv.Struct(input, user); err != nil {
 			return err
 		}
-		if err := s.CheckLoginNameUnique(ctx, user.LoginName); err != nil {
+		if err := s.CheckLoginNameUnique(ctx, user.UserName); err != nil {
 			return err
 		}
-		user.Password = s.EncryptPassword(user.LoginName, user.Password)
+		user.Password = s.EncryptPassword(user.UserName, user.Password)
 		user.Uuid = guid.S()
 		_, err := dao.User.Ctx(ctx).Data(user).OmitEmpty().Insert()
 		return err
@@ -82,14 +84,14 @@ func (s *sUser) CreateUser(ctx context.Context, input *model.UserCreateInput) (u
 
 func (s *sUser) UpdateUser(ctx context.Context, input *model.UserUpdateInput) (rowsAffected int64, err error) {
 	err = dao.User.Transaction(ctx, func(ctx context.Context, tx *gdb.TX) error {
-		if len(input.LoginName) > 0 {
-			if err := s.CheckLoginNameUnique(ctx, input.LoginName); err != nil {
+		if len(input.UserName) > 0 {
+			if err := s.CheckLoginNameUnique(ctx, input.UserName); err != nil {
 				return err
 			}
 		}
 		result, err := dao.User.Ctx(ctx).OmitEmpty().Data(input).
 			FieldsEx(dao.User.Columns().Uuid).
-			Where(dao.User.Columns().Uuid, input.UserUuid).
+			Where(dao.User.Columns().Uuid, input.Uuid).
 			Update()
 		if err != nil {
 			return err
@@ -113,7 +115,7 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 	// 模糊查询
 	if len(input.SearchStr) > 0 {
 		m = m.WhereLike(dao.User.Columns().DisplayName, likePattern).
-			WhereOrLike(dao.User.Columns().LoginName, likePattern).
+			WhereOrLike(dao.User.Columns().UserName, likePattern).
 			WhereOrLike(dao.User.Columns().Phone, likePattern).
 			WhereOrLike(dao.User.Columns().Email, likePattern).
 			WhereOrLike(dao.User.Columns().Desc, likePattern)
@@ -139,4 +141,27 @@ func (s *sUser) QueryUsers(ctx context.Context, input model.UserListInput) (out 
 		return nil, err
 	}
 	return out, nil
+}
+
+// 根据账号查询用户信息
+func (s *sUser) GetUserByLoginName(ctx context.Context, userName string) (user *entity.User, err error) {
+	err = dao.User.Ctx(ctx).Where(g.Map{
+		dao.User.Columns().UserName: userName,
+	}).Scan(&user)
+	return
+}
+
+func (s *sUser) Login(ctx context.Context, input *model.UserLoginInput) (user *entity.User, err error) {
+	user, err = s.GetUserByLoginName(ctx, input.UserName)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errorCode.NewMyErr(ctx, errorCode.UserNotFound, "UserName", input.UserName)
+	}
+	if user.Password == s.EncryptPassword(input.UserName, input.Password) {
+		return user, nil
+	} else {
+		return user, errorCode.NewMyErr(ctx, errorCode.PasswordError)
+	}
 }

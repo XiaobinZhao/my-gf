@@ -6,32 +6,32 @@ import (
 )
 
 type UserGetReq struct {
-	g.Meta   `path:"/user/{userUuid}" method:"get" summary:"获取单个用户" tags:"用户"`
-	UserUuid string `json:"userUuid" p:"userUuid"  v:"required" in:"path" dc:"用户UUID"`
+	g.Meta `summary:"获取单个用户" tags:"用户"`
+	Uuid   string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"用户UUID"`
 }
 
 type UserListReq struct {
-	g.Meta `path:"/user" method:"get" summary:"获取用户列表" tags:"用户"`
+	g.Meta `summary:"获取用户列表" tags:"用户"`
 	CommonPaginationReq
 	SearchStr string `json:"searchStr" p:"searchStr" in:"query" dc:"模糊查询，匹配登录名/姓名/电话/描述"`
 	Sort      string `json:"sort" p:"sort" v:"regex:^[+-].+" in:"query" dc:"排序字段，+表示升序ASC，-表示降序DESC,比如+name：表示按照name升序排列"`
 }
 
 type UserCreateReq struct {
-	g.Meta   `path:"/user" method:"post" summary:"创建用户" tags:"用户"`
+	g.Meta   `summary:"创建用户" tags:"用户"`
 	Password string `json:"password" p:"password"  v:"required"  dc:"密码"`
 	UserBase
 }
 
 type UserDeleteReq struct {
-	g.Meta   `path:"/user/{userUuid}" method:"delete" summary:"删除单个用户" tags:"用户"`
-	UserUuid string `json:"userUuid" p:"userUuid"  v:"required" in:"path" dc:"用户UUID"`
+	g.Meta `summary:"删除单个用户" tags:"用户"`
+	Uuid   string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"用户UUID"`
 }
 
 type UserUpdateReq struct {
-	g.Meta      `path:"/user/{userUuid}" method:"patch" summary:"更新单个用户" tags:"用户"`
-	UserUuid    string `json:"userUuid" p:"userUuid"  v:"required" in:"path" dc:"用户UUID"`
-	LoginName   string `json:"loginName" p:"loginName" v:"passport"  dc:"登录名,字母开头，只能包含字母、数字和下划线，长度在6~18之间"`
+	g.Meta      `summary:"更新单个用户" tags:"用户"`
+	Uuid        string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"用户UUID"`
+	UserName    string `json:"userName" p:"userName" v:"passport"  dc:"登录名,字母开头，只能包含字母、数字和下划线，长度在6~18之间"`
 	DisplayName string `json:"displayName" p:"displayName" dc:"姓名"`
 	Enabled     string `json:"enabled" p:"enabled" v:"in:enabled,disabled" dc:"用户的启用状态，enabled表示启用，disabled表示禁用"`
 	Email       string `json:"email" p:"email" v:"email"  dc:"邮箱"`
@@ -40,7 +40,7 @@ type UserUpdateReq struct {
 }
 
 type UserBase struct {
-	LoginName   string `json:"loginName" p:"loginName" v:"required|passport"  dc:"登录名,字母开头，只能包含字母、数字和下划线，长度在6~18之间"`
+	UserName    string `json:"userName" p:"userName" v:"required|passport"  dc:"登录名,字母开头，只能包含字母、数字和下划线，长度在6~18之间"`
 	DisplayName string `json:"displayName" p:"displayName" v:"required" dc:"姓名"`
 	Enabled     string `json:"enabled" p:"enabled" v:"required|in:enabled,disabled"  d:"enabled" dc:"用户的启用状态，enabled表示启用，disabled表示禁用"`
 	Email       string `json:"email" p:"email" d:"" v:"email"  dc:"邮箱"`
@@ -50,7 +50,7 @@ type UserBase struct {
 
 type UserGetRes struct {
 	Uuid        string      `json:"uuid"        dc:"uuid"`
-	LoginName   string      `json:"loginName"   dc:"登录名"`
+	UserName    string      `json:"userName"   dc:"登录名"`
 	DisplayName string      `json:"displayName" dc:"姓名"`
 	Email       string      `json:"email"       dc:"邮箱"`
 	Phone       string      `json:"phone"       dc:"电话"`

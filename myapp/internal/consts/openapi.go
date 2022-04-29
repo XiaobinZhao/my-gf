@@ -1,6 +1,7 @@
 package consts
 
 const (
-	OpenAPITagNameUser    = `用户`
-	OpenAPITagNameDesktop = `云桌面`
+	OpenAPITagNameAuthorization = `认证`
+	OpenAPITagNameUser          = `用户`
+	OpenAPITagNameDesktop       = `云桌面`
 )

@@ -9,11 +9,11 @@ import (
 	"github.com/gogf/gf/v2/os/gtime"
 )
 
-// User is the golang structure of table user for DAO operations like Where/Data.
+// Token is the golang structure of table user for DAO operations like Where/Data.
 type User struct {
 	g.Meta      `orm:"table:user, do:true"`
 	Uuid        interface{} // uuid
-	LoginName   interface{} // 登录名
+	UserName    interface{} // 登录名
 	DisplayName interface{} // 姓名
 	Password    interface{} // 密码
 	Email       interface{} // 邮箱

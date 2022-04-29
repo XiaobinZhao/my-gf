@@ -1,5 +1,23 @@
 hello = "欢迎来到我的世界，基于goframe。打个招呼吧: %s。"
-userNotExists = "用户 uuid=%s 不存在。"
-loginNameConflicted = "用户登录名'%s'已被占用。"
+
+# 系统
 badRequestParameter = "请求参数异常：%s。"
+myInternalError = "出现意料之外的异常：%s。"
+
+# token
+authHeaderInvalidError = "request请求的header没有包含合法的token，当前的token header为：%s。"
+notSupportedCacheModeError = "CacheMode参数设置错误，当前值：%s。"
+tokenEmpty = "token不能为空"
+tokenKeyEmpty = "token key 不能为空"
+tokenInvalidError = "token: %s不合法，请检查格式。%s"
+unauthorized = "token校验失败：token超时或者token不存在。"
+authorizedFailed = "token校验失败。"
+
+# 用户
+userNotExists = "用户 %s=%s 不存在。"
+loginNameConflicted = "用户登录名'%s'已被占用。"
+passwordError = "用户密码错误。"
+loginFailed = "登录失败。"
+
+# 桌面
 desktopNotExists = "云桌面 uuid=%s 不存在。"

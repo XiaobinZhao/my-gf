@@ -7,7 +7,7 @@ import (
 
 // 根据请求的排序字符串获取数据库对应的字段
 // 为什么要做字段对应转换？因为前端传参是根据response字段传的，response字段一般使用request model的json格式。
-// 而json格式字段和数据库字段以及entity的字段都不一样，比如：json(loginName)和数据库字段(login_name)以及entity的字段(LoginName)
+// 而json格式字段和数据库字段以及entity的字段都不一样，比如：json(userName)和数据库字段(user_name)以及entity的字段(UserName)
 // 字段格式不同，导致字符串比较不一致。所以需要做一下忽略格式的对比，返回对应的数据库字段
 func GetSortField(ctx context.Context, inputColumn string, tableColumnsStr string) string {
 	for _, column := range strings.Split(tableColumnsStr, ",") {

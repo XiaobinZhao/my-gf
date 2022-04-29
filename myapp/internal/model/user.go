@@ -19,9 +19,14 @@ type UserCreateInput struct {
 	api.UserBase
 }
 
+type UserLoginInput struct {
+	Password string // 密码
+	UserName string
+}
+
 type UserUpdateInput struct {
 	api.UserBase
-	UserUuid string // userUuid
+	Uuid string // userUuid
 }
 
 type UserListInput struct {

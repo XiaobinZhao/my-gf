@@ -15,7 +15,7 @@ type userDao struct {
 }
 
 var (
-	// User is globally public accessible object for table user operations.
+	// Token is globally public accessible object for table user operations.
 	User = userDao{
 		internal.NewUserDao(),
 	}

@@ -6,8 +6,7 @@ import (
 	"myapp/internal/errorCode"
 	"myapp/internal/model"
 	"myapp/internal/service"
-
-	"github.com/jinzhu/copier"
+	"myapp/utility/utils"
 )
 
 var Desktop = cDesktop{}
@@ -23,7 +22,7 @@ func (a *cDesktop) Get(ctx context.Context, req *api.DesktopGetReq) (res *api.De
 	if getDesktop == nil {
 		return nil, errorCode.NewMyErr(ctx, errorCode.DesktopNotFound, req.Uuid)
 	}
-	if err = copier.Copy(res, getDesktop); err != nil {
+	if err = utils.MyCopy(ctx, res, getDesktop); err != nil {
 		return nil, err
 	}
 	return
@@ -43,7 +42,7 @@ func (a *cDesktop) Delete(ctx context.Context, req *api.DesktopDeleteReq) (res *
 func (a *cDesktop) Create(ctx context.Context, req *api.DesktopCreateReq) (res *api.DesktopGetRes, err error) {
 	res = &api.DesktopGetRes{}
 	userCreateInput := &model.DesktopCreateInput{}
-	copier.Copy(userCreateInput, req)
+	utils.MyCopy(ctx, userCreateInput, req)
 	uuid, err := service.Desktop().CreateDesktop(ctx, userCreateInput)
 	if err != nil {
 		return nil, err
@@ -55,7 +54,7 @@ func (a *cDesktop) Create(ctx context.Context, req *api.DesktopCreateReq) (res *
 func (a *cDesktop) Update(ctx context.Context, req *api.DesktopUpdateReq) (res *api.DesktopGetRes, err error) {
 	res = &api.DesktopGetRes{}
 	userUpdateInput := &model.DesktopUpdateInput{}
-	copier.Copy(userUpdateInput, req)
+	utils.MyCopy(ctx, userUpdateInput, req)
 	rowsAffected, err := service.Desktop().UpdateDesktop(ctx, userUpdateInput)
 	if err != nil {
 		return nil, err
@@ -88,6 +87,6 @@ func (a *cDesktop) List(ctx context.Context, req *api.DesktopListReq) (res *api.
 	if err != nil {
 		return nil, err
 	}
-	copier.Copy(res, listDesktops)
+	utils.MyCopy(ctx, res, listDesktops)
 	return
 }

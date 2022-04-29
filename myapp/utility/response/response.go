@@ -19,8 +19,12 @@ func Json(r *ghttp.Request, code int, message string, data ...interface{}) {
 	var responseData interface{}
 	if len(data) > 0 {
 		responseData = data[0]
-		if reflect.ValueOf(responseData).IsNil() { // responseData是interface类型，判空需要使用反射；
-			responseData = g.Map{} // response 为nil时，返回{}
+		// responseData是interface类型，判空需要使用反射；但是reflect.ValueOf(i).IsNil()判断i时，必须要求i是有类型的；
+		// 但是nil是无类型的，所以先要处理一下nil
+		if !reflect.ValueOf(responseData).IsValid() {
+			responseData = g.Map{}
+		} else if reflect.ValueOf(responseData).IsNil() {
+			responseData = g.Map{}
 		}
 	} else {
 		responseData = g.Map{}

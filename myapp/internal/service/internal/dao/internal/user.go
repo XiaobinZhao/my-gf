@@ -6,6 +6,7 @@ package internal
 
 import (
 	"context"
+
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
 )
@@ -20,7 +21,7 @@ type UserDao struct {
 // UserColumns defines and stores column names for table user.
 type UserColumns struct {
 	Uuid        string // uuid
-	LoginName   string // 登录名
+	UserName    string // 登录名
 	DisplayName string // 姓名
 	Password    string // 密码
 	Email       string // 邮箱
@@ -34,7 +35,7 @@ type UserColumns struct {
 //  userColumns holds the columns for table user.
 var userColumns = UserColumns{
 	Uuid:        "uuid",
-	LoginName:   "login_name",
+	UserName:    "user_name",
 	DisplayName: "display_name",
 	Password:    "password",
 	Email:       "email",

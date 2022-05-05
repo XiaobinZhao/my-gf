@@ -1,0 +1,48 @@
+# HTTP Server.
+[server]
+	address        = ":8199"
+	serverAgent    = "My GoFrame HTTP Server"
+    openapiPath    = "/api.json"
+    swaggerPath    = "/redoc" # /swagger使用本地静态文件实现，所以此处不能设置路径为/swagger
+    lang           = "zh-CN"  # 与i18n文件名对应
+    serverRoot     = "/resource/public"  # 开启静态文件目录，支持swaggerUI
+
+# Logger configurations.
+[logger]
+    path   = "log/"
+    level  = "all"
+    rotateExpire = "1d"  # 一天一个回滚
+    rotateBackupLimit =  1   # 保留7个日志文件
+    writerColorEnable = true  # 日志文件带有颜色
+    RotateBackupCompress =  9  # 日志文件压缩级别，0-9,9最高
+    stdout = true
+    Flags = 44 #日期 时:分:秒:毫秒 文件:行号
+
+[token]
+    timeout = 600000  # 单位：毫秒
+    cacheMode = 1  # 使用的缓存模式，1为内存模式，2为redis模式，默认为1
+
+
+# Database configurations.
+[database]
+    link  = "mysql:root:mysql@tcp(192.168.212.117:3306)/mygf"
+    debug = true
+
+# GF-CLI工具配置
+[gfcli]
+    # 自定义DAO生成配置(默认是读取database配置)
+    [[gfcli.gen.dao]]
+        link   = "mysql:root:mysql@tcp(192.168.212.117:3306)/mygf"
+        descriptionTag =   true
+        noModelComment =   true
+        removePrefix =     "gf_"
+    [gfcli.build]
+        name=      "my-goframe"
+        arch=      "amd64"
+        system=    "windows"
+        mod=       "none"
+        cgo=       0
+        pack=      "manifest/config,resource/i18n"
+        version=   ""
+        output=    "./bin"
+        extra=     ""

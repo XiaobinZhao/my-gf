@@ -57,7 +57,8 @@ func (s *sMiddleware) ResponseHandler(r *ghttp.Request) {
 		g.Log().Warningf(r.GetCtx(), "response exists something, skip ResponseHandler middleware")
 		return
 	}
-
+	//res, err := r.GetHandlerResponse()
+	//formatResponse(r, res, err)
 	formatResponse(r, r.GetHandlerResponse(), r.GetError())
 }
 

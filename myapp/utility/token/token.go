@@ -207,7 +207,7 @@ func (m *MyToken) GenerateToken(ctx context.Context, userKey string, data interf
 
 	err = m.setCache(ctx, cacheKey, myCacheToken)
 	if err != nil {
-		return nil, err
+		return nil, errorCode.NewMyErr(ctx, errorCode.MyInternalError, err)
 	}
 
 	return myCacheToken, nil

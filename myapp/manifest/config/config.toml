@@ -22,6 +22,11 @@
     timeout = 600000  # 单位：毫秒
     cacheMode = 1  # 使用的缓存模式，1为内存模式，2为redis模式，默认为1
 
+# Redis数据库配置
+[redis.default]
+    address = "192.168.212.117:6379"
+    db      = 0
+    pass    = "7a38d7c46ca4798c7767"
 
 # Database configurations.
 [database]

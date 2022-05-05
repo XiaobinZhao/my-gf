@@ -61,8 +61,8 @@ func (m *MyToken) getCache(ctx context.Context, cacheKey string) (myCacheToken *
 		if userCacheJson.IsNil() {
 			return nil, errorCode.NewMyErr(ctx, errorCode.Unauthorized)
 		}
-
-		err = gconv.Struct(userCacheJson, myCacheToken)
+		myCacheToken = &MyCacheToken{}
+		err = gjson.DecodeTo(userCacheJson, myCacheToken)
 		if err != nil {
 			return nil, errorCode.NewMyErr(ctx, errorCode.MyInternalError, err)
 		}

@@ -6,7 +6,7 @@
 
 # 设置服务开机自启动
 systemctl daemon-reload
-systemctl enable myapp.service
+systemctl enable mygf-app.service
 
 echo "postinst done"
 exit 0

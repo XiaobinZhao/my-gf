@@ -22,8 +22,8 @@ github.com/go-sql-driver/mysql v1.6.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LB
 github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0/go.mod h1:fyg7847qk6SyHyPtNmDHnmrv/HOrqktSC+C9fM+CJOE=
 github.com/go-test/deep v1.0.7 h1:/VSMRlnY/JSyqxQUzQLKVMAskpY/NZKFA5j2P+0pP2M=
 github.com/go-test/deep v1.0.7/go.mod h1:QV8Hv/iy04NyLBxAdO9njL0iVPN1S4d/A3NVv1V36o8=
-github.com/gogf/gf/v2 v2.0.6 h1:2etb4FMpbQKWIJO+UjtIWrZUp01HUsFb6Po8pgizAWk=
-github.com/gogf/gf/v2 v2.0.6/go.mod h1:8uYzw7qNzuq8vrhVlWke1b1925FFqOJIgmyYW1sr/0M=
+github.com/gogf/gf/v2 v2.0.7-0.20220505141935-ad04adcceaaa h1:aKqmXU82IYoYo+G+fCDwnhJSFdS4YQmL1sZ/gWxqspQ=
+github.com/gogf/gf/v2 v2.0.7-0.20220505141935-ad04adcceaaa/go.mod h1:8uYzw7qNzuq8vrhVlWke1b1925FFqOJIgmyYW1sr/0M=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.4.0-rc.1/go.mod h1:ceaxUfeHdC40wWswd/P6IGgMaK3YpKi5j83Wpe3EHw8=
 github.com/golang/protobuf v1.4.0-rc.1.0.20200221234624-67d41d38c208/go.mod h1:xKAWHe0F5eneWXFV3EuXVDTCmh+JuBKY0li0aMyXATA=

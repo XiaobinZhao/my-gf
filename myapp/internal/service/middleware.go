@@ -76,7 +76,7 @@ func formatResponse(r *ghttp.Request, res interface{}, err error) {
 			r.Response.WriteStatus(detail.HttpCode) // 修改默认的状态码，并清除已经写入的response内容
 			r.Response.ClearBuffer()                // gf 会自动往response追加http.StatusText。此处不需要，所以删除掉。
 		}
-		g.Log().Errorf(r.GetCtx(), "%+v", err)
+		//g.Log().Errorf(r.GetCtx(), "%+v", err)
 		response.JsonExit(r, code.Code(), gerror.Current(err).Error()) // 只暴露当前error给调用者
 	} else {
 		response.JsonExit(r, code.Code(), "", res)

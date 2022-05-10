@@ -7,11 +7,7 @@
     lang           = "zh-CN"  # 与i18n文件名对应,zh-CN、en目前只支持这2个
     serverRoot     = "/resource/public"  # 开启静态文件目录，支持swaggerUI
 
-    logPath             = "/var/log/my-goframe/"
-    accessLogEnabled    = true
-    accessLogPattern    = "{Y-m-d}.log"
     errorLogPattern     = "error-{Y-m-d}.log"
-    logStdout           = false  # 禁用标准输出，只输出到文件
 
 [logger]
     path   = "/var/log/my-goframe/"
@@ -36,10 +32,6 @@
 
 # Database configurations.
 [database]
-    [database.logger]
-        path =    "/var/log/my-goframe/"
-        level =   "all"
-        stdout =  false
     [database.default]
         link  = "mysql:root:mysql@tcp(192.168.212.117:3306)/mygf"
         debug = true

@@ -1,6 +1,123 @@
-go web framework base on goFame.
+---
+title: GoFrame学习之路
+date: 2022-04-12 09:49:01
+tags:
+- GoFrame
+- gf
+- go
+categories:
+- go
 
-- https://goframe.org/
+---
+
+在团队中使用过Django/FastAPI/Spring，开发过或大或小的项目，并且也使用python整合了一套用于生产环境的框架。这些项目大部分都是前后端分离的，是一个提供RESTful API的web server。在go的世界里，开发web server，有很多选择，比如beego/iris/gin等，那么哪一个是一个合适的选择呢？直到我看到这片文章[Golang框架选型比较: goframe, beego, iris和gin ](https://goframe.org/pages/viewpage.action?pageId=3673375) ，尤其这句话吸引了我：**团队踩了一年多的坑，才发现团队确实需要一个统一的技术框架而不是一堆不成体系的轮子**；这句话完全就是团队现在的状态，毫不犹豫的，进入GoFrame~
+
+<!-- more -->
+
+
+
+# 一个成熟的项目应该具备哪些特点
+
+一个成熟完整的项目需要事先有标准，有架构，有设计，虽然很多公司在起步的时候没有财力和资源建设独立的基础架构或平台架构部门，甚至运维团队都没有，但是这不妨碍我们心中有一个蓝图，知道努力的方向。
+
+参考：[朱晔的互联网架构实践心得S2E7:漫谈平台架构的工作)](https://www.cnblogs.com/lovecindywang/p/10941007.html)
+
+### 规范
+
+1. 代码仓库管理规范
+
+   1. 有哪几个常驻分支，哪几个临时分支？
+   2. 分支命名规范？
+   3. 提交代码描述规范？
+   4. 分支迁出和合并的时机？
+   5. 哪些分支普通开发没有权限直接提交？
+   6. 测试用什么分支，上线又用什么分支？
+   7. 多版本并行开发如何提测？
+   8. Hotfix如何处理分支？
+
+   - 我们的做法：常驻分支master，临时分支有几类：
+     - 项目分支：某些项目需要一些特别的功能特性，专门为某些项目做的，可能后期需要继续维护。项目分支的管理只有owner有权限。
+     - 开发分支：正在进行的版本开发，可以有多个，比如21.09.1；本次版本开发完成，合入master，删除开发分支，创建下一个版本的开发分支。开发分支只有owner有权限管理
+     - 研发分支：我们使用gitlab的merge request功能，每个研发同学提交代码需要先提交merge request，经过审核，才能合入开发分支。合入之后，该研发分支自动删除。研发分支命名规范是：{名}.{姓}_{分支简单描述}，比如：san.zhang_feature-local-image,表示张三同学提交的一个支持local-image功能的分支。
+     - 每次commit，需要带上任务id，我们使用[TAPD](https://www.tapd.cn/)做任务管理
+     - 测试和上线使用release 包
+     - hotfix时，往往是开发分支已经合入master了，所以我们每次在开发版本合入之前，需要打tag。此时，需要hotfix了，从tag再创建新的分支，然后提交代码，验证，打tag，删除分支。
+   - 代码仓库的管理关系到研发过程的管理。
+
+2. 编码规范。每种语言的规范基本都有自动化工具，比如go的gofmt插件，python的PEP8等。其次是一些开发规范，可以参考阿里Java开发手册
+
+3. 数据库设计规范。
+
+4. 项目结构规范。这个可以参考GoFrame的目录结构做一些适应性的更改
+
+5. 项目管理流程。也就是前边说到的研发过程管理，包含从需求定义到项目结束的全部环节。复杂大型的项目，比如引入Scrum/kanban等规范的开发流程，简单的项目可以简化规范流程中的一些环节。
+
+   1. 迭代周期，迭代周期中的大环节大概发生的时间点
+   2. 开哪些会，开会时间点是？（日站会、周例会、启动会、回顾会、复盘会、排期会、PRD预评审会、PRD评审会、测试用例评审会、上线方案讨论会）
+   3. 项目生命周期中每一个角色产出哪些文档？
+   4. 任务在哪里管理，每一个角色怎么去维护任务状态的流转？不可能任务的每一个状态的流转都由PMO来做
+
+   以上问题可能会关系到一些工具平台的选型，比如：
+
+   - 源代码仓库：比如可以选择Gitlab
+   - 内部类库仓库：比如Java的Maven仓库，可以自己搭建Nexus仓库；docker的仓库；python的仓库等
+   - 项目管理平台：可以选择SaaS产品（比如Tower、Teambition），比较有名的是atlassian三件套的Jira； tapd等
+   - 知识管理平台：可以选择SaaS或开源Wiki产品，比较有名的是atlassian三件套的Confluence
+   - Bug管理平台：比如可以选择禅道或直接复用Jira
+   - 代码质量分析：比如可以搭建SonarQube平台
+
+### 基础框架
+
+go使用GoFrame；python使用FastAPI。大致包含以下模块：
+
+1. Web MVC，代码分层。此处完全可以参看GoFrame，API、controller、service、dao以及各层之间流转数据定义的xxxReq/xxxRes和xxxxInput/xxxxOutput
+2. 数据访问 orm。比如GoFrame的gdb。
+3. 缓存。比如GoFrame的gcache。
+4. 数据库版本管理.比如alembic。
+5. Web API。通常结合swaager来实现，并且提供API文档。提供统一的RESTful服务端API的标准，比如规范化API版本、响应结构体自动包装（自适应）、错误包装、HATEOAS超媒体资源导航整合、数据加解密实现、Collection资源的规范化、自动的mock接口的实现等。
+6. API自动在线文档swaagerUI、redoc。
+7. 数据校验。比如GoFrame的gvalid，通常与web API组合使用。
+8. 配置。比如GoFrame的gcfg。
+9. 日志。比如GoFrame的glog。
+10. 命令参数/环境变量。比如GoFrame的gcmd。
+11. 打包编译。比如GoFrame的gf工具。
+12. 错误以及错误码。比如GoFrame的gerror和gcode.
+13. 链路跟踪。比如GoFrame的链路跟踪。
+14. I18N。比如GoFrame的i18n
+15. 单元测试。
+16. 常用工具
+    1. http client
+    2. 锁。包括互斥锁、分布式锁等
+    3. 加解密。md5/ses/des/sha1等
+    4. 随机数
+
+可以看到GoFrame除了数据库版本管理其他的模块全部都有。
+
+### 中间件
+
+中间件是指独立部署的不具有业务逻辑耦合 的通用服务，存储服务在广义上归到中间件也不是不可以，这里大概列了几个典型：
+
+- MQ代理（Broker，不是Proxy），比如RabbitMQ、RocketMQ、Kafka
+- API网关，有很多开源的网关实现，比如Kong（https://github.com/Kong/kong ）、Spring Cloud Gateway，一般网关的主要功能是调用路由、协议转换、调用编排，然后也会以插件和过滤器形式提供很多安全、弹性方面的扩展功能
+- DB代理，比如类似https://github.com/flike/kingshard 和https://github.com/Qihoo360/Atlas 的MySQL Proxy，实现数据库的读写分离、分表分库、故障转移、弹性处理、监控、SQL优化等功能
+- ES集群，也可以理解为中间件，毕竟ES其实做的就是基于Lucene的分布式集群管理工作
+- nginx
+
+这些中间件虽然很多时候做的是Proxy背后的其它服务，但是节点本身很可能是有状态的，也需要考虑中间件本身的高可用性问题。
+
+### 运维
+
+1. CI/CD平台：一般而言需要自己结合公司的工作流程做一套CI/CD平台（底层可以基于Jenkins（或直接SSH+脚本）封装）
+2. 监控：一般会基于Prometheus/Zabbix+Grafana等开源项目来打造运维的基础监控.当然如果是产品需要直接集成到产品里
+3. 容器编排：比如K8S平台，一般可能会基于k8s的API做一套自己的k8s管控平台或选用类似Rancher这种更好用更高层的服务，完全基于命令行的k8s运维不是很高效易用，比如 [秒云-云原生智能运维中台 (miaoyun.net.cn)](https://miaoyun.net.cn/)
+
+### 总结
+
+项目总是逐渐在完善、增长的，无论是为了项目的健康还是我们这些码农们的健康，都需要不断的优化，不断的前进~
+
+也可以看到GoFrame作为研发的基础框架，是比较完备的。选他，没错~
+
+
 
 # 准备工作
 
@@ -196,13 +313,23 @@ Debian9 安装的golang版本默认为`golang-1.7`
 
 ## 1. gf-cli安装
 
-1. 二进制安装
+1. windows二进制安装
 
-   从[Releases · gogf/gf-cli (github.com)](https://github.com/gogf/gf-cli/releases)下载二进制，然后修改名字为`gf.exe`；放置到`%GOROOT%/bin`或者`%GOPATH%/bin`
+   从https://github.com/gogf/gf/releases下载二进制，然后修改名字为`gf.exe`；放置到`%GOROOT%/bin`或者`%GOPATH%/bin`或者使用install命令：
 
-2. 手动安装 [gf-cli/README.MD](https://github.com/gogf/gf-cli/blob/master/README.MD)
+   ```powershell
+   $ ./gf_windows_amd64.exe install 
+   I found some installable paths for you(from $PATH):
+     Id | Writable | Installed | Path
+      0 |     true |      true | E:\go-workspace\bin
+      1 |     true |     false | D:\programs\go\bin
+   please choose one installation destination [default 0]:
+   gf binary is successfully installed to: E:\go-workspace\bin
+   ```
 
-   `go install github.com/gogf/gf-cli/v2/gf@master`
+2. 手动安装
+
+   `git clone https://github.com/gogf/gf && cd gf/cmd/gf && go install`
 
 3. 校验
 
@@ -259,9 +386,12 @@ Debian9 安装的golang版本默认为`golang-1.7`
    可以查看具体文件是否生成。
 
 ## 4. 开始代码开发
+
 ### 1. main
 
 main 入口程序，启动http server，监听端口
+
+> gf 还支持cmd，可以在启动服务的时候加入命令行支持，具体可以参看gf的命令管理章节。
 
 ```go
 func main() {
@@ -319,14 +449,14 @@ gf使用对象注册+分组路由，结合OpenAPIv3（swagger）作为规范化�
 规范化注册可以规范化接口方法参数，统一接口返回数据格式，自动化的参数校验等。但是有一点不方便维护以及不便于检查路由冲突。所以**本项目基于规范化注册并进行一点修改**：
 
 1. 通过配置文件，设置`SwaggerUI`页面
-   
+
        ```toml
        # HTTP Server.
        [server]
            openapiPath    = "/api.json"
            swaggerPath    = "/swagger"
        ```
-   
+
  2. 路由绑定
 
     使用**分组路由**的方式而不是规范化路由的对象注册方式，在main入口程序绑定路由。
@@ -475,9 +605,9 @@ gf使用对象注册+分组路由，结合OpenAPIv3（swagger）作为规范化�
    	r.Exit()
    }
    ```
-   
+
    我们在这里统一设置API的response的数据结构：
-   
+
    ```go
    JsonRes{
    		Code:    code,
@@ -485,21 +615,118 @@ gf使用对象注册+分组路由，结合OpenAPIv3（swagger）作为规范化�
    		Data:    responseData,
    	}
    ```
-   
+
    并且设置Content-Type、Response.WriteStatus。
-   
+
    特别注意：Response.WriteStatus的设置，gf会自动再response添加http.StatusText，所以要清理一下： `r.Response.ClearBuffer()`。
 
 ### 3. middleware
 
-gf支持使用middleware，如上一章提到的ResponseHandler middleware。具体可以查看官网文档。
+gf支持使用middleware，如上一章提到的ResponseHandler middleware,还支持hook。
+
+![img](https://goframe.org/download/attachments/1114387/image2021-6-8_22-53-43.png?version=1&modificationDate=1623163987980&api=v2)
+
+中间件（`Middleware`）与事件回调（`HOOK`）是`GF`框架的两大流程控制特性，两者都可用于控制请求流程，并且也都支持绑定特定的路由规则。但两者区别也是非常明显的。
+
+1. 首先，中间件侧重于应用级的流程控制，而事件回调侧重于服务级流程控制；也就是说中间件的作用域仅限于应用，而事件回调的“权限”更强大，属于`Server`级别，并可处理静态文件的请求回调。
+2. 其次，中间件设计采用了“洋葱”设计模型；而事件回调采用的是特定事件的钩子触发设计。
+3. 最后，中间件相对来说灵活性更高，也是比较推荐的流程控制方式；而事件回调比较简单，但灵活性较差。
 
 ### 4. openAPIDoc(swagger)
 
 除了我们的业务路由之外，`Server`自动帮我们注册了两个路由：`/api.json`和`/swagger/*`。前者是自动生成的基于标准的`OpenAPIv3`协议的接口文档，后者是自动生成`SwaggerUI`页面，方便开发者查看和调试。这两个功能默认是关闭的，开发者可以通过前面配置文件示例中的`openapiPath`和`swaggerPath`两个配置项开启。
 
--  `> v2.0.0-rc3`版本swaggerUI的实现为redoc
+-  `> v2.0.0-rc3`版本swaggerUI的实现为redoc（redoc没有try it功能）
 -  `<= v2.0.0-rc3`版本swaggerUI的实现为swaggerUI
+
+为了使用高版本的gf，并且使用swaggerUI，可以使用gf的静态文件方式，实现自定义的swaggerUI。
+
+1. 开启静态文件服务支持
+
+   ```toml
+   [server]
+       serverRoot     = "/resource/public"  # 开启静态文件目录，支持swaggerUI
+       openapiPath    = "/api.json"
+       swaggerPath    = "/redoc" # /swagger使用本地静态文件实现，所以此处不能设置路径为/swagger
+   ```
+
+2. 添加swaggerUI的文件。可以从[github](https://github.com/swagger-api/swagger-ui/releases/tag/v4.11.0)上下载；也可以使用[CDN](https://www.bootcdn.cn/swagger-ui/)
+
+   - 下载文件之后，类似于这样的结构
+
+   ```shell
+   ├───public
+   │   └───swagger
+   │           favicon-16x16.png
+   │           favicon-32x32.png
+   │           index.css
+   │           index.html
+   │           oauth2-redirect.html
+   │           swagger-initializer.js
+   │           swagger-ui-bundle.js
+   │           swagger-ui-bundle.js.map
+   │           swagger-ui-es-bundle-core.js
+   │           swagger-ui-es-bundle-core.js.map
+   │           swagger-ui-es-bundle.js
+   │           swagger-ui-es-bundle.js.map
+   │           swagger-ui-standalone-preset.js
+   │           swagger-ui-standalone-preset.js.map
+   │           swagger-ui.css
+   │           swagger-ui.css.map
+   │           swagger-ui.js
+   │           swagger-ui.js.map
+   ```
+
+   修改swagger-initializer.js，把json文件替换为自己的json文件，即： `/api.json`
+
+   - 如果使用CDN的话，只需要index.html就够了
+
+   ```html
+   <!-- HTML for static distribution bundle build -->
+   <!DOCTYPE html>
+   <html lang="en">
+     <head>
+       <meta charset="UTF-8">
+       <title>Swagger UI</title>
+       <link rel="stylesheet" type="text/css" href="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css" />
+       <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/swagger-ui@4.10.3/dist/favicon-32x32.png" sizes="32x32" />
+       <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/swagger-ui@4.10.3/dist/favicon-16x16.png" sizes="16x16" />
+     </head>
+   
+     <body>
+       <div id="swagger-ui"></div>
+       <script src="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js"></script>
+       <script src="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-standalone-preset.js"></script>
+       <script>
+         window.onload = function() {
+           //<editor-fold desc="Changeable Configuration Block">
+   
+           // the following lines will be replaced by docker/configurator, when it runs in a docker-container
+           window.ui = SwaggerUIBundle({
+             // url: "https://petstore.swagger.io/v2/swagger.json",
+             url: "/api.json",
+             dom_id: '#swagger-ui',
+             deepLinking: true,
+             presets: [
+               SwaggerUIBundle.presets.apis,
+               SwaggerUIStandalonePreset
+             ],
+             plugins: [
+               SwaggerUIBundle.plugins.DownloadUrl
+             ],
+             layout: "StandaloneLayout"
+           });
+   
+           //</editor-fold>
+         };
+   
+       </script>
+   
+     </body>
+   </html>
+   ```
+
+3. 访问地址：`http://127.0.0.1:8199/swagger`即可得到swaggerUI，访问地址：`http://127.0.0.1:8199/redoc`即可得到redoc
 
 ### 5. controller 
 
@@ -602,9 +829,9 @@ code的设计关系到一个问题的争议：异常处理的HTTP响应状态码
    - 409 请求冲突。比如说，服务器要求不同用户不能重名，服务器已经有了一个名叫小伟的用户，这时候我们又想创建一个名叫小伟的用户，服务器可以返回 409，告诉我们冲突了，也可以在 body 中明确告知是什么冲突了。
    - 500 服务器错误。没法明确定义的服务器错误都可以返回这个。
    - 502 网关错误。比如说，我们向服务器 A 请求下载葫芦娃，但是 A 其实只是一个代理服务器，他得向 B 请求葫芦娃，但是不知道为啥 B 不理他或者给他错误，这时候哦可以 A 返回 502 用来表示 B 这家伙傲娇了。
-   
+
    基本上以上12个状态码最常用，这些也基本满足需求了。
-   
+
 2. 如果REST API对内使用，那么在客户端和服务端商量好统一标准的情况下可以对响应码类型进行收敛到几个，实现起来也方便
 
    - 200 只要服务接收请求并且如预期的处理了，就可以直接返回200。表示请求被服务接收，参数合法，至于业务是否成功，可以根据response的业务码来确定。这里一般要求response的结构要统一被封装好。比如
@@ -618,9 +845,9 @@ code的设计关系到一个问题的争议：异常处理的HTTP响应状态码
      ```
 
      这里的code就是业务码。gf也内置有一些。
-     
+
    - 400 参数不合法，包括参数缺失、参数格式错误等
-     
+
    - 401 认证失败
 
    - 500 服务接收请求，但是出现预料之外的错误，比如db离线，执行sql失败。
@@ -783,7 +1010,20 @@ TODO: 官方文档说，正常开发时，只需要把i18n放到resource/i18n目
     errorLogPattern     = "error-{Ymd}.log"  # 异常错误日志文件格式。默认为"error-{Ymd}.log"
     accessLogEnabled    = false              # 是否记录访问日志。默认为false
     accessLogPattern    = "access-{Ymd}.log" # 访问日志文件格式。默认为"access-{Ymd}.log"
-
+	
+	# 日志扩展配置(参数日志组件配置)
+    [server.logger]
+      path=                  "/var/log/"   # 日志文件路径。默认为空，表示关闭，仅输出到终端
+      file=                  "{Y-m-d}.log" # 日志文件格式。默认为"{Y-m-d}.log"
+      prefix=                ""            # 日志内容输出前缀。默认为空
+      level=                 "all"         # 日志输出级别
+      stdout=                true          # 日志是否同时输出到终端。默认true
+      rotateSize=            0             # 按照日志文件大小对文件进行滚动切分。默认为0，表示关闭滚动切分特性
+      rotateExpire=          0             # 按照日志文件时间间隔对文件滚动切分。默认为0，表示关闭滚动切分特性
+      rotateBackupLimit=     0             # 按照切分的文件数量清理切分文件，当滚动切分特性开启时有效。默认为0，表示不备份，切分则删除
+      rotateBackupExpire=    0             # 按照切分的文件有效期清理切分文件，当滚动切分特性开启时有效。默认为0，表示不备份，切分则删除
+      rotateBackupCompress=  0             # 滚动切分文件的压缩比（0-9）。默认为0，表示不压缩
+      rotateCheckInterval=   "1h"          # 滚动切分的时间检测间隔，一般不需要设置。默认为1小时
     # PProf配置
 	pprofEnabled        = false              # 是否开启PProf性能调试特性。默认为false
 	pprofPattern        = ""                 # 开启PProf时有效，表示PProf特性的页面访问路径，对当前Server绑定的所有域名有效。
@@ -962,4 +1202,224 @@ l4 := g.Log()
 | `noModelComment` |      | `false`              | 用于指定是否关闭数据模型结构体属性的注释自动生成，内容为数据表对应字段的注释。 | `true`                 |
 
 ### 12. 单元测试
+
+gf的单元测试比较简单，不太适合go web 这样的项目。建议使用testify+gclient。
+
+```go
+package test
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"testing"
+
+	"github.com/gogf/gf/v2/frame/g"
+
+	"github.com/stretchr/testify/suite"
+)
+
+type Result struct {
+	Code    int
+	Message string
+	Data    interface{}
+}
+
+type User struct {
+	Uuid        string
+	UserName    string
+	DisplayName string
+	Email       string
+	Phone       string
+	Desc        string
+}
+
+var (
+	ctx    = context.TODO()
+	client = g.Client()
+	admin  = g.Map{
+		"userName": "admin",
+		"password": "password",
+	}
+	userData = g.Map{
+		"userName":    "zhangsanzhangsan",
+		"displayName": "张三",
+		"email":       "san.zhang@gmail.com",
+		"phone":       "17628272827",
+		"password":    "123qwe.",
+		"desc":        "我是zhang三",
+	}
+	userStruct   = &User{}
+	resultStruct = &Result{}
+	uerUuid      = ""
+	token        = ""
+)
+
+type MyTestSuit struct {
+	suite.Suite
+}
+
+func (s *MyTestSuit) SetupSuite() {
+	client.SetPrefix(fmt.Sprintf("http://127.0.0.1:%s", "8199"))
+	s.login()
+	client.SetHeader("Authorization", "Bearer "+token)
+	fmt.Println("【SetupSuite】config http client and get token before all test")
+}
+
+func (s *MyTestSuit) login() {
+	getContentStr := client.PostContent(ctx, "/login", admin)
+	json.Unmarshal([]byte(getContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+	s.Assert().Equal(resultStruct.Data.(map[string]interface{})["user"].(map[string]interface{})["userName"], admin["userName"])
+	token = fmt.Sprint(resultStruct.Data.(map[string]interface{})["token"])
+}
+
+func (s *MyTestSuit) logout() {
+	getContentStr := client.DeleteContent(ctx, "/logout/"+uerUuid)
+	json.Unmarshal([]byte(getContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+}
+
+func (s *MyTestSuit) TearDownSuite() {
+	fmt.Println("【TearDownSuite】delete token after all test")
+}
+
+func (s *MyTestSuit) SetupTest() {
+}
+
+func (s *MyTestSuit) TearDownTest() {
+}
+
+func (s *MyTestSuit) BeforeTest(suiteName, testName string) {
+}
+
+func (s *MyTestSuit) AfterTest(suiteName, testName string) {
+}
+
+func (s *MyTestSuit) TestUserCRUD() {
+	//create user
+	createContentStr := client.PostContent(ctx, "/users", userData)
+	json.Unmarshal([]byte(createContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+	s.Assert().Equal(resultStruct.Data.(map[string]interface{})["userName"], userData["userName"])
+	uerUuid = resultStruct.Data.(map[string]interface{})["uuid"].(string)
+	// GET user
+	getContentStr := client.GetContent(ctx, "/users/"+uerUuid)
+	json.Unmarshal([]byte(getContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+	s.Assert().Equal(resultStruct.Data.(map[string]interface{})["userName"], userData["userName"])
+	// list user
+	listContentStr := client.GetContent(ctx, "/users")
+	json.Unmarshal([]byte(listContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+	s.Assert().Greater(resultStruct.Data.(map[string]interface{})["total"], float64(0))
+	// update user
+	updateContentStr := client.PatchContent(ctx, "/users/"+uerUuid, g.Map{"displayName": "wangmazi"})
+	json.Unmarshal([]byte(updateContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+	s.Assert().Equal(resultStruct.Data.(map[string]interface{})["displayName"], "wangmazi")
+	// delete user
+	deleteContentStr := client.DeleteContent(ctx, "/users/"+uerUuid)
+	json.Unmarshal([]byte(deleteContentStr), resultStruct)
+	s.Assert().Equal(resultStruct.Code, 0)
+
+}
+
+func TestExample(t *testing.T) {
+	suite.Run(t, new(MyTestSuit))
+}
+```
+
+运行单元测试，
+
+```shell
+=== RUN   TestExample
+【SetupSuite】config http client and get token before all test
+--- PASS: TestExample (0.79s)
+=== RUN   TestExample/TestUserCRUD
+【TearDownSuite】delete token after all test
+    --- PASS: TestExample/TestUserCRUD (0.62s)
+PASS
+```
+
+### 13. token身份验证
+
+常用的身份验证方式有以下几种：
+
+- http协议（header上使用Authorization）
+  - [Basic](https://swagger.io/docs/specification/authentication/basic-authentication/)
+  - [Bearer](https://swagger.io/docs/specification/authentication/bearer-authentication/)
+  - 其他，可以参见： [RFC 7235](https://tools.ietf.org/html/rfc7235) and [HTTP Authentication Scheme Registry](https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml)
+- [API keys](https://swagger.io/docs/specification/authentication/api-keys/) ，可以在request请求的header、cookies、url请求参数
+- [OAuth 2](https://swagger.io/docs/specification/authentication/oauth2/)
+- [OpenID Connect Discovery](https://swagger.io/docs/specification/authentication/openid-connect-discovery/)
+
+我们最常见的JWT就是http Bearer的一种实现。
+
+本项目参考 [gtoken](https://gitee.com/goflyfox/gtoken),并进行一定程度的修改，具有以下优点：
+
+1. 支撑单点应用使用内存存储，也支持使用redis存储；完全适用于企业生产级使用；
+2. 有效的避免了jwt服务端无法退出问题；
+3. 解决jwt无法作废已颁布的令牌，只能等到令牌过期问题；
+4. 通过用户扩展信息存储在服务端，有效规避了jwt携带大量用户扩展信息导致降低传输效率问题；
+5. 有效避免jwt需要客户端实现续签功能，增加客户端复杂度；支持服务端自动续期，客户端不需要关心续签逻辑；
+
+大体流程如下：
+
+```mermaid
+sequenceDiagram
+	autonumber
+	client ->> +server: login（username+password）
+	Note right of server: 验证用户名+密码正确，<br/>并加密算出token；token存入缓存
+	server -->> -client: 返回token
+	client ->> +server: 带上token发起请求
+	Note right of server: 1.验证token合法且没有过期，<br/>2. 刷新缓存有效期
+	server -->> -client: 返回业务结果
+```
+
+
+
+#### 独立部署
+
+推荐使用systemctl来控制服务进程，推荐参考[Systemd 入门教程：命令篇 - 阮一峰](http://www.ruanyifeng.com/blog/2016/03/systemd-tutorial-commands.html)
+
+1. 书写shell脚本，控制服务启停，参考：[最快打包部署GoFrame项目到云服务器](https://goframe.org/pages/viewpage.action?pageId=7296120)
+
+2. 书写systemctl命令脚本：mygf-app.service
+
+   ```shell
+   [Unit]
+   Description=my-goframe app daemon
+   After=mysql.service
+   Wants=redis-server.service mysql.service
+   
+   [Service]
+   Type=forking
+   ExecStart=/opt/my-goframe/run.sh start
+   ExecStop=/opt/my-goframe/run.sh stop
+   #Restart=always
+   #RestartSec=5s
+   #StartLimitInterval=0
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+   由于后端使用到mysql，所以mysql是必须的前置服务，但是redis不一定需要，所以是wants，代表 没有redis服务也可以正常启动。
+
+   ```shell
+   #Restart=always
+   #RestartSec=5s
+   #StartLimitInterval=0
+   ```
+
+   以上三行我注释掉了，可以开放出来，就可以实现服务的异常关闭自动开启，当然如果是手动关闭的话，就不会启动了。
+
+3. 把mygf-app.servicewen文件放入：\lib\systemd\system\目录下
+
+4. 设置服务开机启动：`systemctl enable mygf-app.service`
+
+5. 接下来就可以愉快的使用systemctl来控制服务的启停了
+
+#### 容器部署
 

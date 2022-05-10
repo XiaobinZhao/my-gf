@@ -1,5 +1,5 @@
 [Unit]
-Description=my-goframe app daemon
+Description=my-goframe daemon
 After=mysql.service
 Wants=redis-server.service mysql.service
 

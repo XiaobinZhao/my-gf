@@ -8,6 +8,8 @@ import (
 	"myapp/internal/service"
 	"reflect"
 
+	"github.com/gogf/gf/v2/os/glog"
+
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gcmd"
@@ -20,6 +22,8 @@ var (
 		Usage: "main",
 		Brief: "start MyGoFrame server",
 		Func: func(ctx context.Context, parser *gcmd.Parser) (err error) {
+			SetLoggerDefaultHandler() // 替代默认的log
+
 			s := g.Server()
 
 			err = g.I18n().SetPath("resource/i18n") // i18n目录默认是gres资源目录或者根目录；在研发阶段需要重设一下i18n目录
@@ -137,4 +141,16 @@ func enhanceOpenAPIDoc(s *ghttp.Server) {
 			},
 		},
 	}
+}
+
+// 替代默认的日志handler，禁止控制台输出，全部输出到文件
+func SetLoggerDefaultHandler() {
+	glog.SetDefaultHandler(func(ctx context.Context, in *glog.HandlerInput) {
+		m := map[string]interface{}{
+			"stdout": false,
+			"path":   g.Config().MustGet(ctx, "logger.path", "log/").String(), // 此处必须重新设置，才可以实现db的log写入文件
+		}
+		in.Logger.SetConfigWithMap(m)
+		in.Next(ctx)
+	})
 }

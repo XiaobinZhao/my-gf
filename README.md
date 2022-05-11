@@ -14,6 +14,12 @@ categories:
 
 <!-- more -->
 
+# 项目地址
+
+- gitee: https://gitee.com/xiaobin_zhao/my-gf.git
+
+- github: https://github.com/XiaobinZhao/my-gf.git
+
 
 
 # 一个成熟的项目应该具备哪些特点

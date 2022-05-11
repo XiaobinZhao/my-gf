@@ -10,7 +10,7 @@ type LoginReq struct {
 
 type LogoutReq struct {
 	g.Meta `summary:"用户退出" tags:"认证"`
-	Uuid   string `json:"uuid" p:"uuid"  v:"required" in:"path" dc:"用户UUID"`
+	Uuid   string `json:"uuid" p:"uuid" v:"required" in:"path" dc:"用户UUID"`
 }
 
 type LoginRes struct {

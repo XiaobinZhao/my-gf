@@ -101,13 +101,13 @@ func enhanceOpenAPIDoc(s *ghttp.Server) {
 
 	openapi.Components = goai.Components{
 		SecuritySchemes: goai.SecuritySchemes{
-			"APIKeyAuth": goai.SecuritySchemeRef{
+			"BearerAuth": goai.SecuritySchemeRef{
 				Ref: "", // 暂时还不知道该值是干什么用的
 				Value: &goai.SecurityScheme{
-					Type:         "apiKey",
-					In:           "header",
-					Name:         "Authorization",
-					BearerFormat: "Bearer",
+					Type:   "http",
+					In:     "header",
+					Name:   "Authorization",
+					Scheme: "bearer",
 				},
 			},
 		},

@@ -1,7 +1,7 @@
 # HTTP Server.
 [server]
 	address        = "0.0.0.0:8199"
-	serverAgent    = "My GoFrame HTTP Server"
+    serverAgent    = "My GoFrame HTTP Server"
     openapiPath    = "/api.json"
     swaggerPath    = "/redoc" # /swagger使用本地静态文件实现，所以此处不能设置路径为/swagger
     lang           = "zh-CN"  # 与i18n文件名对应,zh-CN、en目前只支持这2个
@@ -46,7 +46,7 @@
         removePrefix =     "gf_"
     [gfcli.build]
         name=      "mygf-app"
-        path=      "../bin"
+        path=      "./bin"
         arch=      "amd64"
         system=    "linux"
         mod=       "none"

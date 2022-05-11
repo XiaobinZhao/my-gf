@@ -1140,6 +1140,31 @@ l3 := g.Log("none")
 l4 := g.Log()
 ```
 
+**log这一部分需要特别说明一下。** 在gf中，涉及到日志的几个部分：server、db以及log，可以发现每个部分都有单独的log配置，也就是说每一部分的log配置都可以和其他不一样。另外还有一部分是gf系统本身的，比如server启动时产生的，如下：
+
+```shell
+2022-05-07 11:35:20.949 [DEBU] SetServerRoot path: /root/go-workspace/MyGoFrame/myapp/resource/public
+2022-05-07 11:35:20.958 [INFO] swagger ui is serving at address: http://0.0.0.0:8199/redoc/
+2022-05-07 11:35:20.958 [INFO] openapi specification is serving at address: http://0.0.0.0:8199/api.json
+2022-05-07 11:35:20.959 [INFO] pid[22663]: http server started listening on [0.0.0.0:8199]
+
+    ADDRESS    | METHOD |      ROUTE       |                             HANDLER                             |            MIDDLEWARE             
+---------------|--------|------------------|-----------------------------------------------------------------|-----------------------------------
+  0.0.0.0:8199 | ALL    | /*               | github.com/gogf/gf/v2/net/ghttp.internalMiddlewareServerTracing | GLOBAL MIDDLEWARE                 
+---------------|--------|------------------|-----------------------------------------------------------------|-----------------------------------
+...省略...
+```
+
+所以总共有4个部分的日志，但是无论是那一部分，都是glog组件的实例。
+
+但是如果4个部分的log设置没有特殊区别，期望统一设置，实验下来发现并没有那么容易。经过在gf官网的confluence和gf的作者讨论，最终的结论是：
+
+1. gf系统有一个默认的handler，我们可以设置这个handler，来实现我们的目的，从而避免gf系统的日志脱离我们控制。gf作者的原话是：
+
+   > 通过`v2.1`以上版本（目前可以尝试`master`分支）的`glog.SetDefaultHandler`设置全局的自定义处理方法来实现自定义日志打印。
+
+2. 统一了系统的log处理之后，相当于全局默认的log配置就被固定了，此时再使用配置文件的logger配置项，就可以进行配置项覆盖了。
+
 #### gf-build
 
 ```toml
@@ -1368,7 +1393,6 @@ PASS
 
 ```mermaid
 sequenceDiagram
-	autonumber
 	client ->> +server: login（username+password）
 	Note right of server: 验证用户名+密码正确，<br/>并加密算出token；token存入缓存
 	server -->> -client: 返回token
@@ -1378,6 +1402,8 @@ sequenceDiagram
 ```
 
 
+
+### 14. 部署
 
 #### 独立部署
 
@@ -1421,5 +1447,122 @@ sequenceDiagram
 
 5. 接下来就可以愉快的使用systemctl来控制服务的启停了
 
+##### 打包成deb
+
+以上的过程可以打包成deb文件来进行更加方便、规范的部署。
+
+1. deb打包需要有 postinst(postinstallation)、 postrm(postremove)、preinst(preinstallation)、prerm(preremove)等几个控制文件。按照需要修改这几个文件。
+
+   1. 在postinst添加设置开机启动的命令
+
+      ```bash
+      #!/bin/bash
+      
+      ################################
+      # Deb包文件解包之后，将会运行该脚本
+      ################################
+      
+      # 设置服务开机自启动
+      systemctl daemon-reload
+      systemctl enable mygf-app.service
+      
+      echo "postinst done"
+      exit 0
+      ```
+
+   2. 在postrm中清空安装目录
+
+      ```bash
+      #!/bin/sh
+      
+      ################################
+      # 删除软件包关联文件之后执行
+      ################################
+      
+      echo "postrm done"
+      # 删除因为dpkg卸载自动清除之后遗留的目录
+      rm -rf /opt/my-goframe
+      exit 0
+      ```
+
+   3. 其他文件按需修改
+
+2. `dpkg-deb -b xxx`使用dpkg-deb命令即可得到deb包
+
+3. 以上过程可以写一个shell脚本来实现。具体可以查看本项目代码。
+
+经过以上步骤即可得到一个deb包，使用dpkg -i来安装，然后使用systemctl命令来控制服务启停。perfect ~
+
 #### 容器部署
 
+1. 书写Dockerfile
+
+   ```dockerfile
+   
+   FROM loads/alpine:3.8
+   LABEL maintainer="xiaobin.zhao@cstack.io"
+   
+   ###############################################################################
+   #                                INSTALLATION
+   ###############################################################################
+   
+   # 设置在容器内执行时当前的目录
+   ENV WORKDIR /opt/my-goFrame
+   
+   # 添加应用可执行文件，并设置执行权限
+   COPY ./bin/linux_amd64/mygf-app   $WORKDIR/mygf-app
+   RUN chmod +x $WORKDIR/mygf-app
+   
+   # TODO: 可能是gf build的问题，造成资源没有被pack,需要继续拷贝
+   COPY ./resource/i18n   $WORKDIR/resource/i18n
+   COPY ./resource/public   $WORKDIR/resource/public
+   
+   ###############################################################################
+   #                                   START
+   ###############################################################################
+   WORKDIR $WORKDIR
+   CMD ./mygf-app
+   ```
+
+2. 过程中发现gf build没有把资源文件pack进去，需要拷贝进容器
+
+3. 执行`gf docker`或者执行`gf build`和`docker build`
+
+4. `docker run`即可得到容器实例
+
+### 15. 压力测试
+
+使用jmeter做一下压力测试，看下简单业务查询（sql读）的能力。
+
+| 并发 | 请求个数 | 平均时长 | 最小时长 | 最大时长 | QPS   | error %（503 Service Unavailable） |
+| ---- | -------- | -------- | -------- | -------- | ----- | ---------------------------------- |
+| 100  | 10000    | 158      | 22       | 19214    | 400.5 | 0.02%                              |
+| 50   | 10000    | 85       | 27       | 7080     | 461.8 | 0                                  |
+| 20   | 10000    | 30       | 27       | 259      | 616.8 | 0                                  |
+| 10   | 10000    | 31       | 27       | 505      | 301.4 | 0                                  |
+
+可以看到，qps还是表现不错的。
+
+以下是我使用[fastapi](https://gitee.com/xiaobin_zhao/my-fast-api.git)做的框架，测试的数据。
+
+| **异步（limit_concurrency=10）** |          |          |          |          |             |                                    |
+| -------------------------------- | -------- | -------- | -------- | -------- | ----------- | ---------------------------------- |
+| 并发                             | 请求个数 | 平均时长 | 最小时长 | 最大时长 | QPS         | error %（503 Service Unavailable） |
+| 5                                | 1000     | 38       | 31       | 113      | 116.2925922 | 0                                  |
+| 10                               | 1000     | 39       | 28       | 86       | 205.3809817 | 0.121                              |
+| 15                               | 1050     | 43       | 28       | 81       | 242.2145329 | 0.29047619                         |
+| 20                               | 1000     | 46       | 28       | 81       | 308.9280198 | 0.412                              |
+| 50                               | 1000     | 52       | 28       | 93       | 485.9086492 | 0.637                              |
+| 100                              | 1000     | 95       | 28       | 1082     | 425.3509145 | 0.641                              |
+| 200                              | 1000     | 56       | 28       | 88       | 756.429652  | 0.785                              |
+| 1000                             | 1000     | 104      | 54       | 317      | 823.723229  | 0.878                              |
+
+**结论**
+
+虽然测试过程不严谨，控制变量也不对等，只是进行一个大概的压力测试结果。
+
+以上测试数据明显可以看出go的效率要比python要高。
+
+
+
+# 完结，撒花...

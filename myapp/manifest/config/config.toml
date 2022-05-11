@@ -17,7 +17,7 @@
     rotateBackupLimit =  7   # 保留7个日志文件
     writerColorEnable = true  # 日志文件带有颜色
     RotateBackupCompress =  9  # 日志文件压缩级别，0-9,9最高
-    stdout = false  # 禁用标准输出，只输出到文件
+    globalStdout = false  # 自定义key,是否输出到标准输出
     Flags = 44 #日期 时:分:秒:毫秒 文件:行号
 
 [token]

@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"myapp/internal/consts"
 	"myapp/internal/controller"
 	"myapp/internal/service"
-	"reflect"
 
 	"github.com/gogf/gf/v2/os/glog"
 
@@ -79,37 +77,10 @@ var (
 			enhanceOpenAPIDoc(s)
 			// 启动Http Server
 			s.Run()
-			// 以下语句不会执行，期望以后gf能够改进吧
-			addOpenApiPathSecurity(s)
 			return
 		},
 	}
 )
-
-// TODO: gf没有处理每一个path对应的Security配置.此处是期望在path全部被加载之后在去修改，但是看来是不行的
-func addOpenApiPathSecurity(s *ghttp.Server) {
-	openApi := s.GetOpenApi()
-	fmt.Printf("openApi.Paths: %+v \n", openApi.Paths)
-	for k, v := range openApi.Paths {
-		fmt.Printf("修改path: %s \n", k)
-
-		if !reflect.ValueOf(v.Get).IsNil() {
-			v.Get.Security = &goai.SecurityRequirements{goai.SecurityRequirement{"APIKeyAuth": []string{}}}
-		}
-		if !reflect.ValueOf(v.Post).IsNil() {
-			v.Get.Security = &goai.SecurityRequirements{goai.SecurityRequirement{"APIKeyAuth": []string{}}}
-		}
-		if !reflect.ValueOf(v.Put).IsNil() {
-			v.Get.Security = &goai.SecurityRequirements{goai.SecurityRequirement{"APIKeyAuth": []string{}}}
-		}
-		if !reflect.ValueOf(v.Patch).IsNil() {
-			v.Get.Security = &goai.SecurityRequirements{goai.SecurityRequirement{"APIKeyAuth": []string{}}}
-		}
-		if !reflect.ValueOf(v.Delete).IsNil() {
-			v.Get.Security = &goai.SecurityRequirements{goai.SecurityRequirement{"APIKeyAuth": []string{}}}
-		}
-	}
-}
 
 func enhanceOpenAPIDoc(s *ghttp.Server) {
 	openapi := s.GetOpenApi()
@@ -147,8 +118,8 @@ func enhanceOpenAPIDoc(s *ghttp.Server) {
 func SetLoggerDefaultHandler() {
 	glog.SetDefaultHandler(func(ctx context.Context, in *glog.HandlerInput) {
 		m := map[string]interface{}{
-			"stdout": false,
-			"path":   g.Config().MustGet(ctx, "logger.path", "log/").String(), // 此处必须重新设置，才可以实现db的log写入文件
+			"stdout": g.Config().MustGet(ctx, "logger.globalStdout", true).Bool(), // 使用自定义的全局字段
+			"path":   g.Config().MustGet(ctx, "logger.path", "log/").String(),     // 此处必须重新设置，才可以实现db的log写入文件
 		}
 		in.Logger.SetConfigWithMap(m)
 		in.Next(ctx)
